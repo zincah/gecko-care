@@ -1,0 +1,105 @@
+# ========================
+# Miscellaneous
+# ========================
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# macOS
+*.icloud
+*.orig
+
+# ========================
+# IntelliJ / Android Studio
+# ========================
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# ========================
+# VS Code
+# ========================
+#.vscode/          # 필요하면 주석 해제
+
+# ========================
+# Flutter / Dart / Pub
+# ========================
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+.packages           # ⭐ NEW (예전 플러터에서 생기던 파일, 있으면 무시)
+
+# Drift / SQLite (원하면)
+# drift_dev.sqlite  # 마이그레이션용 DB 파일 쓰면 무시
+
+# ========================
+# Android
+# ========================
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+**/android/**/local.properties      # ⭐ NEW (SDK 경로 등 내 로컬 정보)
+/android/.gradle/                   # ⭐ NEW (그래들 캐시)
+/android/captures/                  # ⭐ NEW
+**/android/**/captures/             # ⭐ NEW
+
+# keystore / signing 관련 (절대 올리면 안 됨)
+*.jks                               # ⭐ NEW
+*.keystore                          # ⭐ NEW
+*.keystore.old                      # ⭐ NEW
+*.jks.old                           # ⭐ NEW
+
+# Firebase / Google service
+**/google-services.json             # ⭐ NEW
+**/GoogleService-Info.plist         # ⭐ NEW
+
+# ========================
+# iOS / Xcode
+# ========================
+**/DerivedData/                     # ⭐ NEW
+**/xcuserdata/                      # ⭐ NEW
+**/*.xcuserstate                    # ⭐ NEW
+**/*.xcworkspace/xcuserdata/        # ⭐ NEW
+**/.symlinks/                       # ⭐ NEW
+**/Pods/                            # (CocoaPods 쓰면)
+
+# Flutter iOS frameworks (보통 빌드 산출물)
+/ios/Flutter/App.framework
+/ios/Flutter/Flutter.framework
+/ios/Flutter/Flutter.podspec
+
+# Symbolication
+app.*.symbols
+
+# Obfuscation
+app.*.map.json
+
+# ========================
+# Env / secrets (직접 쓸 때만)
+# ========================
+.env                                # ⭐ NEW
+.env.*                              # ⭐ NEW
+*.pem                               # ⭐ NEW
+*.crt                               # ⭐ NEW
+*.key                               # ⭐ NEW
+*.p12                               # ⭐ NEW
+*.cer                               # ⭐ NEW
+
+# 혹시 직접 만들어 쓴다면 예시
+# lib/secrets.dart                  # ⭐ NEW (API 키 하드코딩 파일 사용 시)
