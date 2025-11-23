@@ -45,6 +45,9 @@ class GeckoApp extends StatelessWidget {
     return const CupertinoApp(
       debugShowCheckedModeBanner: false,
       title: 'Gecko Care',
+      theme: CupertinoThemeData(
+        brightness: Brightness.light, // ← 항상 라이트 모드 유지
+      ),
       home: HomePage(),
     );
   }

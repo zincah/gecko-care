@@ -123,587 +123,744 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     });
   }
 
-    /// 급여 추가 시트 (개체를 시트 안에서 선택)
-  Future<void> _showAddFeedingSheet(DateTime date) async {
-    final foodCtrl = TextEditingController(text: '귀뚜라미');
-    final amountCtrl = TextEditingController(text: '5');
-    final noteCtrl = TextEditingController();
-    String unit = '마리';
+  /// 급여 추가 시트 (개체를 시트 안에서 선택)
+Future<void> _showAddFeedingSheet(DateTime date) async {
+  final foodCtrl = TextEditingController(text: '귀뚜라미');
+  final amountCtrl = TextEditingController(text: '5');
+  final noteCtrl = TextEditingController();
+  String unit = '마리';
 
-    // 개체가 하나도 없으면 안내
-    if (_animals.isEmpty) {
-      await showCupertinoDialog(
-        context: context,
-        builder: (ctx) => const CupertinoAlertDialog(
-          title: Text('개체가 없어요'),
-          content: Text('먼저 개체 관리 화면에서 도마뱀을 등록해 주세요.'),
-        ),
-      );
-      return;
-    }
-
-    // 처음 열 때 기본 선택: 현재 필터 개체 or 첫 번째 개체
-    String selectedAnimalId =
-        _selectedAnimalId ?? _animals.first.id;
-
-    await showCupertinoModalPopup(
+  // 개체가 하나도 없으면 안내
+  if (_animals.isEmpty) {
+    await showCupertinoDialog(
       context: context,
-      builder: (ctx) {
-        // ✅ 이 StatefulBuilder 안에서만 sheet 내부 state를 관리
-        return StatefulBuilder(
-          builder: (ctx, setStateSheet) {
-            final selectedAnimalName =
-                _animals.firstWhere(
-                  (a) => a.id == selectedAnimalId,
-                  orElse: () => _animals.first,
-                ).name;
-
-            return CupertinoActionSheet(
-              title: Text(
-                DateFormat.yMMMd('ko_KR').format(date),
-              ),
-              message: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 8),
-
-                  // 🔹 개체 선택 select 박스
-                  const Text(
-                    '개체',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: CupertinoColors.secondaryLabel,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    onPressed: () async {
-                      final result =
-                          await showCupertinoModalPopup<String>(
-                        context: ctx,
-                        builder: (ctx2) {
-                          return CupertinoActionSheet(
-                            title: const Text('개체 선택'),
-                            actions: [
-                              for (final a in _animals)
-                                CupertinoActionSheetAction(
-                                  onPressed: () =>
-                                      Navigator.of(ctx2).pop(a.id),
-                                  child: Text(a.name),
-                                ),
-                            ],
-                            cancelButton: CupertinoActionSheetAction(
-                              onPressed: () =>
-                                  Navigator.of(ctx2).pop(),
-                              child: const Text('취소'),
-                            ),
-                          );
-                        },
-                      );
-
-                      if (result != null) {
-                        setStateSheet(() {
-                          selectedAnimalId = result;
-                        });
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: CupertinoColors.systemGrey5,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisAlignment:
-                            MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            selectedAnimalName,
-                            style: const TextStyle(fontSize: 15),
-                          ),
-                          const Icon(
-                            CupertinoIcons.chevron_down,
-                            size: 18,
-                            color: CupertinoColors.systemGrey,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-                  const Text(
-                    '먹이 종류',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: CupertinoColors.secondaryLabel,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  CupertinoTextField(
-                    controller: foodCtrl,
-                    placeholder: '예: 귀뚜라미, 두비아',
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    '수량',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: CupertinoColors.secondaryLabel,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  CupertinoTextField(
-                    controller: amountCtrl,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(
-                            decimal: true),
-                    placeholder: '예: 5',
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    '단위',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: CupertinoColors.secondaryLabel,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  CupertinoSegmentedControl<String>(
-                    groupValue: unit,
-                    children: const {
-                      '마리': Padding(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        child: Text('마리'),
-                      ),
-                      '개수': Padding(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        child: Text('개수'),
-                      ),
-                      'g': Padding(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        child: Text('g'),
-                      ),
-                      'ml': Padding(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        child: Text('ml'),
-                      ),
-                    },
-                    onValueChanged: (v) {
-                      unit = v;
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    '메모 (선택)',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: CupertinoColors.secondaryLabel,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  CupertinoTextField(
-                    controller: noteCtrl,
-                    placeholder: '예: 칼슘 같이 급여, 식욕 좋음 등',
-                    maxLines: 2,
-                  ),
-                ],
-              ),
-              actions: [
-                CupertinoActionSheetAction(
-                  onPressed: () async {
-                    final amount =
-                        double.tryParse(amountCtrl.text.trim()) ?? 0;
-                    final now = DateTime.now();
-                    final at = DateTime(
-                      date.year,
-                      date.month,
-                      date.day,
-                      now.hour,
-                      now.minute,
-                    );
-
-                    await _db.into(_db.feedings).insert(
-                          FeedingsCompanion.insert(
-                            id: _uuid.v4(),
-                            animalId: selectedAnimalId, // ✅ 선택된 개체로 저장
-                            at: at.toIso8601String(),
-                            foodType:
-                                drift.Value(foodCtrl.text.trim()),
-                            amount: drift.Value(amount),
-                            unit: drift.Value(unit),
-                            supplements: const drift.Value(null),
-                            note: drift.Value(
-                              noteCtrl.text.trim().isEmpty
-                                  ? null
-                                  : noteCtrl.text.trim(),
-                            ),
-                          ),
-                        );
-
-                    Navigator.of(ctx).pop(); // 시트 닫기
-                  },
-                  isDefaultAction: true,
-                  child: const Text('저장'),
-                ),
-              ],
-              cancelButton: CupertinoActionSheetAction(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('취소'),
-              ),
-            );
-          },
-        );
-      },
+      builder: (ctx) => const CupertinoAlertDialog(
+        title: Text('개체가 없어요'),
+        content: Text('먼저 개체 관리 화면에서 도마뱀을 등록해 주세요.'),
+      ),
     );
-
-    foodCtrl.dispose();
-    amountCtrl.dispose();
-    noteCtrl.dispose();
+    return;
   }
 
-  /// 급여 수정 시트 (등록 UI 동일 + 날짜 변경 가능)
-  Future<void> _showEditFeedingSheet(Feeding feeding) async {
-    // 기존 값들 초기화
-    final foodCtrl = TextEditingController(text: feeding.foodType ?? '');
-    final amountCtrl =
-        TextEditingController(text: (feeding.amount ?? 0).toString());
-    final noteCtrl = TextEditingController(text: feeding.note ?? '');
-    String unit = feeding.unit ?? '마리';
+  // 처음 열 때 기본 선택: 현재 필터 개체 or 첫 번째 개체
+  String selectedAnimalId = _selectedAnimalId ?? _animals.first.id;
 
-    // 기존 날짜/시간
-    DateTime originalAt =
-        DateTime.tryParse(feeding.at) ?? DateTime.now();
+  await showCupertinoModalPopup(
+    context: context,
+    builder: (ctx) {
+      final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
+      final size = MediaQuery.of(ctx).size;
 
-    // 날짜 변경 저장할 변수 (시트 안에서 setStateSheet로 갱신됨)
-    DateTime selectedDate =
-        DateTime(originalAt.year, originalAt.month, originalAt.day);
+      return AnimatedPadding(
+        duration: const Duration(milliseconds: 200),
+        padding: EdgeInsets.only(bottom: bottomInset),
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: StatefulBuilder(
+            builder: (ctx, setStateSheet) {
+              final selectedAnimalName = _animals
+                  .firstWhere(
+                    (a) => a.id == selectedAnimalId,
+                    orElse: () => _animals.first,
+                  )
+                  .name;
 
-    // 개체 없으면 아무것도 못함
-    if (_animals.isEmpty) return;
-
-    // 기본 개체 선택
-    String selectedAnimalId = feeding.animalId;
-    if (!_animals.any((a) => a.id == selectedAnimalId)) {
-      selectedAnimalId = _animals.first.id;
-    }
-
-    await showCupertinoModalPopup(
-      context: context,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setStateSheet) {
-            final selectedAnimalName = _animals
-                .firstWhere(
-                  (a) => a.id == selectedAnimalId,
-                  orElse: () => _animals.first,
-                )
-                .name;
-
-            return CupertinoActionSheet(
-              title: Text(
-                DateFormat.yMMMd('ko_KR').format(selectedDate),
-              ),
-              message: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 8),
-
-                  // 🔹 날짜 변경 버튼
-                  const Text(
-                    '날짜',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: CupertinoColors.secondaryLabel,
-                    ),
+              return SafeArea(
+                top: false,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
                   ),
-                  const SizedBox(height: 4),
-                  CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    onPressed: () async {
-                      DateTime tempDate = selectedDate;
-
-                      await showCupertinoModalPopup(
-                        context: context,
-                        builder: (pickerCtx) {
-                          return Container(
-                            color: CupertinoColors.systemBackground,
-                            height: 260,
-                            child: Column(
+                  child: Container(
+                    width: size.width,
+                    color: CupertinoColors.systemBackground,
+                    child: SingleChildScrollView(
+                      // 키보드 올라와도 스크롤 가능
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // 상단 바
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                SizedBox(
-                                  height: 200,
-                                  child: CupertinoDatePicker(
-                                    mode: CupertinoDatePickerMode.date,
-                                    initialDateTime: selectedDate,
-                                    maximumDate: DateTime.now(),
-                                    onDateTimeChanged: (d) {
-                                      tempDate = d;
-                                    },
+                                Container(
+                                  width: 36,
+                                  height: 4,
+                                  margin:
+                                      const EdgeInsets.only(bottom: 8, top: 4),
+                                  decoration: BoxDecoration(
+                                    color: CupertinoColors.systemGrey3,
+                                    borderRadius: BorderRadius.circular(2),
                                   ),
-                                ),
-                                CupertinoButton(
-                                  child: const Text('완료'),
-                                  onPressed: () {
-                                    Navigator.of(pickerCtx).pop();
-                                    setStateSheet(() {
-                                      selectedDate = tempDate;
-                                    });
-                                  },
                                 ),
                               ],
                             ),
-                          );
-                        },
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: CupertinoColors.systemGrey5,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            DateFormat.yMMMd('ko_KR').format(selectedDate),
-                            style: const TextStyle(fontSize: 15),
-                          ),
-                          const Icon(
-                            CupertinoIcons.calendar,
-                            size: 18,
-                            color: CupertinoColors.systemGrey,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
 
-                  // -----------------------------------
-                  // 🔹 개체 선택
-                  // -----------------------------------
-                  const SizedBox(height: 12),
-                  const Text(
-                    '개체',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: CupertinoColors.secondaryLabel,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    onPressed: () async {
-                      final result =
-                          await showCupertinoModalPopup<String>(
-                        context: ctx,
-                        builder: (ctx2) {
-                          return CupertinoActionSheet(
-                            title: const Text('개체 선택'),
-                            actions: [
-                              for (final a in _animals)
-                                CupertinoActionSheetAction(
-                                  onPressed: () =>
-                                      Navigator.of(ctx2).pop(a.id),
-                                  child: Text(a.name),
+                            // 제목
+                            Center(
+                              child: Text(
+                                DateFormat.yMMMd('ko_KR').format(date),
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
                                 ),
-                            ],
-                            cancelButton: CupertinoActionSheetAction(
-                              onPressed: () => Navigator.of(ctx2).pop(),
-                              child: const Text('취소'),
+                              ),
                             ),
-                          );
-                        },
-                      );
+                            const SizedBox(height: 16),
 
-                      if (result != null) {
-                        setStateSheet(() {
-                          selectedAnimalId = result;
-                        });
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: CupertinoColors.systemGrey5,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            selectedAnimalName,
-                            style: const TextStyle(fontSize: 15),
-                          ),
-                          const Icon(
-                            CupertinoIcons.chevron_down,
-                            size: 18,
-                            color: CupertinoColors.systemGrey,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                            // 개체 선택
+                            const Text(
+                              '개체',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: CupertinoColors.secondaryLabel,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            CupertinoButton(
+                              padding: EdgeInsets.zero,
+                              onPressed: () async {
+                                final result =
+                                    await showCupertinoModalPopup<String>(
+                                  context: ctx,
+                                  builder: (ctx2) {
+                                    return CupertinoActionSheet(
+                                      title: const Text('개체 선택'),
+                                      actions: [
+                                        for (final a in _animals)
+                                          CupertinoActionSheetAction(
+                                            onPressed: () =>
+                                                Navigator.of(ctx2).pop(a.id),
+                                            child: Text(a.name),
+                                          ),
+                                      ],
+                                      cancelButton:
+                                          CupertinoActionSheetAction(
+                                        onPressed: () =>
+                                            Navigator.of(ctx2).pop(),
+                                        child: const Text('취소'),
+                                      ),
+                                    );
+                                  },
+                                );
 
-                  // -----------------------------------
-                  // 🔹 나머지 입력 폼 (먹이, 수량, 단위, 메모)
-                  // -----------------------------------
+                                if (result != null) {
+                                  setStateSheet(() {
+                                    selectedAnimalId = result;
+                                  });
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: CupertinoColors.systemGrey5,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      selectedAnimalName,
+                                      style: const TextStyle(fontSize: 15),
+                                    ),
+                                    const Icon(
+                                      CupertinoIcons.chevron_down,
+                                      size: 18,
+                                      color: CupertinoColors.systemGrey,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
 
-                  const SizedBox(height: 12),
-                  const Text(
-                    '먹이 종류',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: CupertinoColors.secondaryLabel,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  CupertinoTextField(
-                    controller: foodCtrl,
-                    placeholder: '예: 귀뚜라미, 두비아',
-                  ),
-                  const SizedBox(height: 12),
+                            const SizedBox(height: 12),
+                            const Text(
+                              '먹이 종류',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: CupertinoColors.secondaryLabel,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            CupertinoTextField(
+                              controller: foodCtrl,
+                              placeholder: '예: 귀뚜라미, 두비아',
+                            ),
 
-                  const Text(
-                    '수량',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: CupertinoColors.secondaryLabel,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  CupertinoTextField(
-                    controller: amountCtrl,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    placeholder: '예: 5',
-                  ),
+                            const SizedBox(height: 12),
+                            const Text(
+                              '수량',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: CupertinoColors.secondaryLabel,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            CupertinoTextField(
+                              controller: amountCtrl,
+                              keyboardType: const TextInputType
+                                  .numberWithOptions(decimal: true),
+                              placeholder: '예: 5',
+                            ),
 
-                  const SizedBox(height: 12),
-                  const Text(
-                    '단위',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: CupertinoColors.secondaryLabel,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  CupertinoSegmentedControl<String>(
-                    groupValue: unit,
-                    children: const {
-                      '마리': Padding(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        child: Text('마리'),
-                      ),
-                      '개수': Padding(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        child: Text('개수'),
-                      ),
-                      'g': Padding(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        child: Text('g'),
-                      ),
-                      'ml': Padding(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        child: Text('ml'),
-                      ),
-                    },
-                    onValueChanged: (v) {
-                      unit = v;
-                    },
-                  ),
+                            const SizedBox(height: 12),
+                            const Text(
+                              '단위',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: CupertinoColors.secondaryLabel,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            CupertinoSegmentedControl<String>(
+                              groupValue: unit,
+                              children: const {
+                                '마리': Padding(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  child: Text('마리'),
+                                ),
+                                '개수': Padding(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  child: Text('개수'),
+                                ),
+                                'g': Padding(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  child: Text('g'),
+                                ),
+                                'ml': Padding(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  child: Text('ml'),
+                                ),
+                              },
+                              onValueChanged: (v) {
+                                setStateSheet(() {
+                                  unit = v;
+                                });
+                              },
+                            ),
 
-                  const SizedBox(height: 12),
-                  const Text(
-                    '메모 (선택)',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: CupertinoColors.secondaryLabel,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  CupertinoTextField(
-                    controller: noteCtrl,
-                    placeholder: '예: 칼슘 같이 급여, 식욕 좋음 등',
-                    maxLines: 2,
-                  ),
-                ],
-              ),
+                            const SizedBox(height: 12),
+                            const Text(
+                              '메모 (선택)',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: CupertinoColors.secondaryLabel,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            CupertinoTextField(
+                              controller: noteCtrl,
+                              placeholder: '예: 칼슘 같이 급여, 식욕 좋음 등',
+                              maxLines: 2,
+                            ),
 
-              actions: [
-                CupertinoActionSheetAction(
-                  onPressed: () async {
-                    final amount =
-                        double.tryParse(amountCtrl.text.trim()) ?? 0;
+                            const SizedBox(height: 20),
 
-                    // 시간을 유지하면서 날짜만 교체
-                    final updatedAt = DateTime(
-                      selectedDate.year,
-                      selectedDate.month,
-                      selectedDate.day,
-                      originalAt.hour,
-                      originalAt.minute,
-                      originalAt.second,
-                    );
+                            // 버튼들
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: CupertinoButton(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 10,
+                                    ),
+                                    color: CupertinoColors.systemGrey5,
+                                    onPressed: () {
+                                      Navigator.of(ctx).pop();
+                                    },
+                                    child: const Text(
+                                      '취소',
+                                      style: TextStyle(
+                                        color: CupertinoColors.label,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: CupertinoButton.filled(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 10,
+                                    ),
+                                    onPressed: () async {
+                                      final amount =
+                                          double.tryParse(
+                                                  amountCtrl.text.trim()) ??
+                                              0;
+                                      final now = DateTime.now();
+                                      final at = DateTime(
+                                        date.year,
+                                        date.month,
+                                        date.day,
+                                        now.hour,
+                                        now.minute,
+                                      );
 
-                    await (_db.update(_db.feedings)
-                          ..where((t) => t.id.equals(feeding.id)))
-                        .write(
-                      FeedingsCompanion(
-                        animalId: drift.Value(selectedAnimalId),
-                        foodType: drift.Value(foodCtrl.text.trim()),
-                        amount: drift.Value(amount),
-                        unit: drift.Value(unit),
-                        note: drift.Value(
-                          noteCtrl.text.trim().isEmpty
-                              ? null
-                              : noteCtrl.text.trim(),
+                                      await _db
+                                          .into(_db.feedings)
+                                          .insert(
+                                            FeedingsCompanion.insert(
+                                              id: _uuid.v4(),
+                                              animalId: selectedAnimalId,
+                                              at: at.toIso8601String(),
+                                              foodType: drift.Value(
+                                                  foodCtrl.text.trim()),
+                                              amount: drift.Value(amount),
+                                              unit: drift.Value(unit),
+                                              supplements:
+                                                  const drift.Value(null),
+                                              note: drift.Value(
+                                                noteCtrl.text
+                                                        .trim()
+                                                        .isEmpty
+                                                    ? null
+                                                    : noteCtrl.text.trim(),
+                                              ),
+                                            ),
+                                          );
+
+                                      Navigator.of(ctx).pop();
+                                    },
+                                    child: const Text('저장'),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                        at: drift.Value(updatedAt.toIso8601String()),
                       ),
-                    );
-
-                    Navigator.of(ctx).pop(); // 시트 닫기
-                  },
-                  isDefaultAction: true,
-                  child: const Text('저장'),
+                    ),
+                  ),
                 ),
-              ],
+              );
+            },
+          ),
+        ),
+      );
+    },
+  );
 
-              cancelButton: CupertinoActionSheetAction(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('취소'),
-              ),
-            );
-          },
-        );
-      },
-    );
+  foodCtrl.dispose();
+  amountCtrl.dispose();
+  noteCtrl.dispose();
+}
 
-    foodCtrl.dispose();
-    amountCtrl.dispose();
-    noteCtrl.dispose();
+/// 급여 수정 시트 (등록 UI 동일 + 날짜 변경 가능)
+Future<void> _showEditFeedingSheet(Feeding feeding) async {
+  final foodCtrl = TextEditingController(text: feeding.foodType ?? '');
+  final amountCtrl =
+      TextEditingController(text: (feeding.amount ?? 0).toString());
+  final noteCtrl = TextEditingController(text: feeding.note ?? '');
+  String unit = feeding.unit ?? '마리';
+
+  DateTime originalAt =
+      DateTime.tryParse(feeding.at) ?? DateTime.now();
+  DateTime selectedDate =
+      DateTime(originalAt.year, originalAt.month, originalAt.day);
+
+  if (_animals.isEmpty) return;
+
+  String selectedAnimalId = feeding.animalId;
+  if (!_animals.any((a) => a.id == selectedAnimalId)) {
+    selectedAnimalId = _animals.first.id;
   }
 
+  await showCupertinoModalPopup(
+    context: context,
+    builder: (ctx) {
+      final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
+      final size = MediaQuery.of(ctx).size;
+
+      return AnimatedPadding(
+        duration: const Duration(milliseconds: 200),
+        padding: EdgeInsets.only(bottom: bottomInset),
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: StatefulBuilder(
+            builder: (ctx, setStateSheet) {
+              final selectedAnimalName = _animals
+                  .firstWhere(
+                    (a) => a.id == selectedAnimalId,
+                    orElse: () => _animals.first,
+                  )
+                  .name;
+
+              return SafeArea(
+                top: false,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
+                  child: Container(
+                    width: size.width,
+                    color: CupertinoColors.systemBackground,
+                    child: SingleChildScrollView(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 36,
+                                  height: 4,
+                                  margin:
+                                      const EdgeInsets.only(bottom: 8, top: 4),
+                                  decoration: BoxDecoration(
+                                    color: CupertinoColors.systemGrey3,
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Center(
+                              child: Text(
+                                DateFormat.yMMMd('ko_KR').format(selectedDate),
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // 날짜 선택
+                            const Text(
+                              '날짜',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: CupertinoColors.secondaryLabel,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            CupertinoButton(
+                              padding: EdgeInsets.zero,
+                              onPressed: () async {
+                                DateTime tempDate = selectedDate;
+
+                                await showCupertinoModalPopup(
+                                  context: context,
+                                  builder: (pickerCtx) {
+                                    return Container(
+                                      color: CupertinoColors.systemBackground,
+                                      height: 260,
+                                      child: Column(
+                                        children: [
+                                          SizedBox(
+                                            height: 200,
+                                            child: CupertinoDatePicker(
+                                              mode:
+                                                  CupertinoDatePickerMode.date,
+                                              initialDateTime: selectedDate,
+                                              maximumDate: DateTime.now(),
+                                              onDateTimeChanged: (d) {
+                                                tempDate = d;
+                                              },
+                                            ),
+                                          ),
+                                          CupertinoButton(
+                                            child: const Text('완료'),
+                                            onPressed: () {
+                                              Navigator.of(pickerCtx).pop();
+                                              setStateSheet(() {
+                                                selectedDate = tempDate;
+                                              });
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: CupertinoColors.systemGrey5,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      DateFormat.yMMMd('ko_KR')
+                                          .format(selectedDate),
+                                      style: const TextStyle(fontSize: 15),
+                                    ),
+                                    const Icon(
+                                      CupertinoIcons.calendar,
+                                      size: 18,
+                                      color: CupertinoColors.systemGrey,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            // 개체 선택
+                            const Text(
+                              '개체',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: CupertinoColors.secondaryLabel,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            CupertinoButton(
+                              padding: EdgeInsets.zero,
+                              onPressed: () async {
+                                final result =
+                                    await showCupertinoModalPopup<String>(
+                                  context: ctx,
+                                  builder: (ctx2) {
+                                    return CupertinoActionSheet(
+                                      title: const Text('개체 선택'),
+                                      actions: [
+                                        for (final a in _animals)
+                                          CupertinoActionSheetAction(
+                                            onPressed: () =>
+                                                Navigator.of(ctx2).pop(a.id),
+                                            child: Text(a.name),
+                                          ),
+                                      ],
+                                      cancelButton:
+                                          CupertinoActionSheetAction(
+                                        onPressed: () =>
+                                            Navigator.of(ctx2).pop(),
+                                        child: const Text('취소'),
+                                      ),
+                                    );
+                                  },
+                                );
+
+                                if (result != null) {
+                                  setStateSheet(() {
+                                    selectedAnimalId = result;
+                                  });
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: CupertinoColors.systemGrey5,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      selectedAnimalName,
+                                      style: const TextStyle(fontSize: 15),
+                                    ),
+                                    const Icon(
+                                      CupertinoIcons.chevron_down,
+                                      size: 18,
+                                      color: CupertinoColors.systemGrey,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 12),
+                            const Text(
+                              '먹이 종류',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: CupertinoColors.secondaryLabel,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            CupertinoTextField(
+                              controller: foodCtrl,
+                              placeholder: '예: 귀뚜라미, 두비아',
+                            ),
+
+                            const SizedBox(height: 12),
+                            const Text(
+                              '수량',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: CupertinoColors.secondaryLabel,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            CupertinoTextField(
+                              controller: amountCtrl,
+                              keyboardType: const TextInputType
+                                  .numberWithOptions(decimal: true),
+                              placeholder: '예: 5',
+                            ),
+
+                            const SizedBox(height: 12),
+                            const Text(
+                              '단위',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: CupertinoColors.secondaryLabel,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            CupertinoSegmentedControl<String>(
+                              groupValue: unit,
+                              children: const {
+                                '마리': Padding(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  child: Text('마리'),
+                                ),
+                                '개수': Padding(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  child: Text('개수'),
+                                ),
+                                'g': Padding(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  child: Text('g'),
+                                ),
+                                'ml': Padding(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  child: Text('ml'),
+                                ),
+                              },
+                              onValueChanged: (v) {
+                                setStateSheet(() {
+                                  unit = v;
+                                });
+                              },
+                            ),
+
+                            const SizedBox(height: 12),
+                            const Text(
+                              '메모 (선택)',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: CupertinoColors.secondaryLabel,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            CupertinoTextField(
+                              controller: noteCtrl,
+                              placeholder: '예: 칼슘 같이 급여, 식욕 좋음 등',
+                              maxLines: 2,
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: CupertinoButton(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 10,
+                                    ),
+                                    color: CupertinoColors.systemGrey5,
+                                    onPressed: () {
+                                      Navigator.of(ctx).pop();
+                                    },
+                                    child: const Text(
+                                      '취소',
+                                      style: TextStyle(
+                                        color: CupertinoColors.label,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: CupertinoButton.filled(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 10,
+                                    ),
+                                    onPressed: () async {
+                                      final amount =
+                                          double.tryParse(
+                                                  amountCtrl.text.trim()) ??
+                                              0;
+
+                                      final updatedAt = DateTime(
+                                        selectedDate.year,
+                                        selectedDate.month,
+                                        selectedDate.day,
+                                        originalAt.hour,
+                                        originalAt.minute,
+                                        originalAt.second,
+                                      );
+
+                                      await (_db.update(_db.feedings)
+                                            ..where((t) =>
+                                                t.id.equals(feeding.id)))
+                                          .write(
+                                        FeedingsCompanion(
+                                          animalId:
+                                              drift.Value(selectedAnimalId),
+                                          foodType: drift.Value(
+                                              foodCtrl.text.trim()),
+                                          amount: drift.Value(amount),
+                                          unit: drift.Value(unit),
+                                          note: drift.Value(
+                                            noteCtrl.text
+                                                    .trim()
+                                                    .isEmpty
+                                                ? null
+                                                : noteCtrl.text.trim(),
+                                          ),
+                                          at: drift.Value(
+                                              updatedAt.toIso8601String()),
+                                        ),
+                                      );
+
+                                      Navigator.of(ctx).pop();
+                                    },
+                                    child: const Text('저장'),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+    },
+  );
+
+  foodCtrl.dispose();
+  amountCtrl.dispose();
+  noteCtrl.dispose();
+}
 
   Widget _buildDayCell(
     DateTime day, {

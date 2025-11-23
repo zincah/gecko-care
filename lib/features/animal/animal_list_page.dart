@@ -56,71 +56,77 @@ class _AnimalListPageState extends ConsumerState<AnimalListPage> {
     await showCupertinoModalPopup(
       context: context,
       builder: (ctx) {
-        return CupertinoActionSheet(
-          title: const Text('새 개체 추가'),
-          message: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 8),
-              const Text(
-                '이름',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: CupertinoColors.secondaryLabel,
-                ),
+        final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
+        return AnimatedPadding(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+          padding: EdgeInsets.only(bottom: bottomInset),
+          child: CupertinoActionSheet(
+            title: const Text('새 개체 추가'),
+            message: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 8),
+                  const Text(
+                    '이름',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: CupertinoColors.secondaryLabel,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  CupertinoTextField(
+                    controller: nameCtrl,
+                    placeholder: '예: 비키',
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    '종 (선택)',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: CupertinoColors.secondaryLabel,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  CupertinoTextField(
+                    controller: speciesCtrl,
+                    placeholder: '예: Crested Gecko',
+                  ),
+                ],
               ),
-              const SizedBox(height: 4),
-              CupertinoTextField(
-                controller: nameCtrl,
-                placeholder: '예: 비키',
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                '종 (선택)',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: CupertinoColors.secondaryLabel,
-                ),
-              ),
-              const SizedBox(height: 4),
-              CupertinoTextField(
-                controller: speciesCtrl,
-                placeholder: '예: Crested Gecko',
+            actions: [
+              CupertinoActionSheetAction(
+                isDefaultAction: true,
+                onPressed: () async {
+                  final name = nameCtrl.text.trim();
+                  final species = speciesCtrl.text.trim();
+
+                  if (name.isEmpty) {
+                    // 간단 검증: 이름이 없으면 무시
+                    Navigator.of(ctx).pop();
+                    return;
+                  }
+
+                  await _db.into(_db.animals).insert(
+                        AnimalsCompanion.insert(
+                          id: _uuid.v4(),
+                          name: name,
+                          species: drift.Value(
+                            species.isEmpty ? null : species,
+                          ),
+                        ),
+                      );
+
+                  Navigator.of(ctx).pop();
+                },
+                child: const Text('저장'),
               ),
             ],
-          ),
-          actions: [
-            CupertinoActionSheetAction(
-              isDefaultAction: true,
-              onPressed: () async {
-                final name = nameCtrl.text.trim();
-                final species = speciesCtrl.text.trim();
-
-                if (name.isEmpty) {
-                  // 간단 검증: 이름이 없으면 무시
-                  Navigator.of(ctx).pop();
-                  return;
-                }
-
-                await _db.into(_db.animals).insert(
-                      AnimalsCompanion.insert(
-                        id: _uuid.v4(),
-                        name: name,
-                        species: drift.Value(
-                          species.isEmpty ? null : species,
-                        ),
-                      ),
-                    );
-
-                Navigator.of(ctx).pop();
-              },
-              child: const Text('저장'),
+            cancelButton: CupertinoActionSheetAction(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('취소'),
             ),
-          ],
-          cancelButton: CupertinoActionSheetAction(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('취소'),
-          ),
+          )
         );
       },
     );
