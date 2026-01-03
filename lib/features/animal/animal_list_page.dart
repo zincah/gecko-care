@@ -1,8 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show Colors;
 import 'package:drift/drift.dart' as drift;
+import 'dart:io';
 import 'package:uuid/uuid.dart';
 import 'animal_detail_page.dart';
+import 'hidden_animal_list_page.dart';
 import '../../common/db/app_database.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -47,6 +49,40 @@ class _AnimalListPageState extends ConsumerState<AnimalListPage> {
       ]));
     return query.watch();
   }
+
+  // 숨김 개체 관리 페이지 열기
+  Future<void> _showMoreMenu() async {
+  await showCupertinoModalPopup(
+    context: context,
+    builder: (ctx) => CupertinoActionSheet(
+      title: const Text('메뉴'),
+      actions: [
+        CupertinoActionSheetAction(
+          onPressed: () {
+            Navigator.of(ctx).pop();
+            Navigator.of(context).push(
+              CupertinoPageRoute(
+                builder: (_) => const HiddenAnimalListPage(),
+              ),
+            );
+          },
+          child: const Text('숨김 개체 관리'),
+        ),
+        // CupertinoActionSheetAction(
+        //   onPressed: () async {
+        //     Navigator.of(ctx).pop();
+        //     await _cleanupOrphanProfileImages(); // 나중에 구현
+        //   },
+        //   child: const Text('저장 공간 정리'),
+        // ),
+      ],
+      cancelButton: CupertinoActionSheetAction(
+        onPressed: () => Navigator.of(ctx).pop(),
+        child: const Text('취소'),
+      ),
+    ),
+  );
+}
 
   /// 개체 추가 시트
   Future<void> _showAddAnimalSheet() async {
@@ -151,11 +187,22 @@ class _AnimalListPageState extends ConsumerState<AnimalListPage> {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: const Text('개체 관리'),
-        trailing: CupertinoButton(
-          padding: EdgeInsets.zero,
-          minSize: 32,
-          child: const Icon(CupertinoIcons.add),
-          onPressed: _showAddAnimalSheet,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CupertinoButton(
+              padding: EdgeInsets.zero,
+              minSize: 32,
+              child: const Icon(CupertinoIcons.ellipsis),
+              onPressed: _showMoreMenu,
+            ),
+            CupertinoButton(
+              padding: EdgeInsets.zero,
+              minSize: 32,
+              child: const Icon(CupertinoIcons.add),
+              onPressed: _showAddAnimalSheet,
+            ),
+          ]
         ),
       ),
       child: SafeArea(
@@ -238,10 +285,7 @@ class _AnimalListPageState extends ConsumerState<AnimalListPage> {
                     child: Row(
                       children: [
                         // 왼쪽 이모지/아이콘 (임시)
-                        const Text(
-                          '🦎',
-                          style: TextStyle(fontSize: 24),
-                        ),
+                        _buildAvatar(a),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
@@ -280,5 +324,24 @@ class _AnimalListPageState extends ConsumerState<AnimalListPage> {
         ),
       ),
     );
+  }
+
+  Widget _buildAvatar(Animal a) {
+    final path = a.profileImagePath;
+    final hasImage = path != null && path.isNotEmpty && File(path).existsSync();
+
+    if (hasImage) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: Image.file(
+          File(path),
+          width: 36,
+          height: 36,
+          fit: BoxFit.cover,
+        ),
+      );
+    }
+
+    return const Text('🦎', style: TextStyle(fontSize: 24));
   }
 }

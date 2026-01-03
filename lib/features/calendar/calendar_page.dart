@@ -7,6 +7,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:uuid/uuid.dart';
 
+import '../animal/animal_list_page.dart';
 import '../../common/db/app_database.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -89,6 +90,29 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     return query.watch();
   }
 
+/// 선택한 날짜 + 선택된 개체에 대한 청소 기록
+Stream<List<CageCleaning>> _watchCleaningsForDay(DateTime day) {
+  final start = DateTime(day.year, day.month, day.day);
+  final end = start.add(const Duration(days: 1));
+  final startIso = start.toIso8601String();
+  final endIso = end.toIso8601String();
+
+  final query = _db.select(_db.cageCleanings)
+    ..where((t) {
+      final base = t.at.isBetweenValues(startIso, endIso);
+      if (_selectedAnimalId != null) {
+        return base & t.animalId.equals(_selectedAnimalId!);
+      }
+      return base;
+    })
+    ..orderBy([
+      (t) => drift.OrderingTerm(expression: t.at),
+    ]);
+
+  return query.watch();
+}
+
+
   /// 상단 필터용 개체 선택 select 박스
   Future<void> _showAnimalFilterSheet() async {
     if (_animals.isEmpty) return;
@@ -130,13 +154,34 @@ Future<void> _showAddFeedingSheet(DateTime date) async {
   final noteCtrl = TextEditingController();
   String unit = '마리';
 
-  // 개체가 하나도 없으면 안내
+ // ✅ 개체가 없으면 안내 후, 바깥 탭으로도 닫히도록
   if (_animals.isEmpty) {
     await showCupertinoDialog(
       context: context,
-      builder: (ctx) => const CupertinoAlertDialog(
-        title: Text('개체가 없어요'),
-        content: Text('먼저 개체 관리 화면에서 도마뱀을 등록해 주세요.'),
+      barrierDismissible: true, // 🔹 바깥 영역 탭하면 닫힘
+      builder: (ctx) => CupertinoAlertDialog(
+        title: const Text('개체가 없어요'),
+        content: const Text('먼저 개체 관리 화면에서 도마뱀을 등록해 주세요.'),
+        actions: [
+          // 그냥 닫기
+          CupertinoDialogAction(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('닫기'),
+          ),
+          // 개체 관리 화면으로 이동하고 싶으면 이런 버튼도 가능
+          CupertinoDialogAction(
+            isDefaultAction: true,
+            onPressed: () {
+              Navigator.of(ctx).pop(); // 다이얼로그 닫고
+              Navigator.of(context).push(
+                CupertinoPageRoute(
+                  builder: (_) => AnimalListPage(),
+                ),
+              );
+            },
+            child: const Text('개체 등록하러 가기'),
+          ),
+        ],
       ),
     );
     return;
@@ -862,6 +907,645 @@ Future<void> _showEditFeedingSheet(Feeding feeding) async {
   noteCtrl.dispose();
 }
 
+/// 케이지 청소 기록 추가 시트
+Future<void> _showAddCleaningSheet(DateTime date) async {
+  final noteCtrl = TextEditingController();
+  String cleaningType = 'full'; // 예: 'full', 'spot', 'water' 같은 값
+
+ // ✅ 개체가 없으면 안내 후, 바깥 탭으로도 닫히도록
+  if (_animals.isEmpty) {
+    await showCupertinoDialog(
+      context: context,
+      barrierDismissible: true, // 🔹 바깥 영역 탭하면 닫힘
+      builder: (ctx) => CupertinoAlertDialog(
+        title: const Text('개체가 없어요'),
+        content: const Text('먼저 개체 관리 화면에서 도마뱀을 등록해 주세요.'),
+        actions: [
+          // 그냥 닫기
+          CupertinoDialogAction(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('닫기'),
+          ),
+          // 개체 관리 화면으로 이동하고 싶으면 이런 버튼도 가능
+          CupertinoDialogAction(
+            isDefaultAction: true,
+            onPressed: () {
+              Navigator.of(ctx).pop(); // 다이얼로그 닫고
+              Navigator.of(context).pushNamed('/animals'); // ✏️ 실제 라우트 이름으로 변경
+            },
+            child: const Text('개체 등록하러 가기'),
+          ),
+        ],
+      ),
+    );
+    return;
+  }
+
+  // 기본 선택 개체: 현재 필터 개체 또는 첫 번째 개체
+  String selectedAnimalId = _selectedAnimalId ?? _animals.first.id;
+
+  await showCupertinoModalPopup(
+    context: context,
+    builder: (ctx) {
+      // 🔹 키보드 높이
+      final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
+
+      return Padding(
+        padding: EdgeInsets.only(bottom: bottomInset),
+        child: StatefulBuilder(
+          builder: (ctx, setStateSheet) {
+            final selectedAnimalName = _animals
+                .firstWhere(
+                  (a) => a.id == selectedAnimalId,
+                  orElse: () => _animals.first,
+                )
+                .name;
+
+            return CupertinoActionSheet(
+              title: Text(
+                DateFormat.yMMMd('ko_KR').format(date),
+              ),
+
+              // 🔹 여기 전체를 스크롤 가능 + 최대 높이 제한
+              message: ConstrainedBox(
+                constraints: BoxConstraints(
+                  // 화면 높이의 45% 정도만 사용 (원하면 숫자 조절)
+                  maxHeight: MediaQuery.of(ctx).size.height * 0.45,
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 8),
+
+                      // 개체 선택
+                      const Text(
+                        '개체',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: CupertinoColors.secondaryLabel,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      CupertinoButton(
+                        padding: EdgeInsets.zero,
+                        onPressed: () async {
+                          final result =
+                              await showCupertinoModalPopup<String>(
+                            context: ctx,
+                            builder: (ctx2) {
+                              return CupertinoActionSheet(
+                                title: const Text('개체 선택'),
+                                actions: [
+                                  for (final a in _animals)
+                                    CupertinoActionSheetAction(
+                                      onPressed: () =>
+                                          Navigator.of(ctx2).pop(a.id),
+                                      child: Text(a.name),
+                                    ),
+                                ],
+                                cancelButton: CupertinoActionSheetAction(
+                                  onPressed: () =>
+                                      Navigator.of(ctx2).pop(),
+                                  child: const Text('취소'),
+                                ),
+                              );
+                            },
+                          );
+
+                          if (result != null) {
+                            setStateSheet(() {
+                              selectedAnimalId = result;
+                            });
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: CupertinoColors.systemGrey5,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisAlignment:
+                                MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                selectedAnimalName,
+                                style: const TextStyle(fontSize: 15),
+                              ),
+                              const Icon(
+                                CupertinoIcons.chevron_down,
+                                size: 18,
+                                color: CupertinoColors.systemGrey,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+                      const Text(
+                        '청소 종류',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: CupertinoColors.secondaryLabel,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      CupertinoSegmentedControl<String>(
+                        groupValue: cleaningType,
+                        children: const {
+                          'full': Padding(
+                            padding:
+                                EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            child: Text('전체 청소'),
+                          ),
+                          'spot': Padding(
+                            padding:
+                                EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            child: Text('부분 청소'),
+                          ),
+                          'water': Padding(
+                            padding:
+                                EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            child: Text('물 교체'),
+                          ),
+                        },
+                        onValueChanged: (v) {
+                          setStateSheet(() {
+                            cleaningType = v;
+                          });
+                        },
+                      ),
+
+                      const SizedBox(height: 12),
+                      const Text(
+                        '메모 (선택)',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: CupertinoColors.secondaryLabel,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      CupertinoTextField(
+                        controller: noteCtrl,
+                        placeholder: '예: 바닥재 전체 교체, 유목 세척 등',
+                        maxLines: 2,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              actions: [
+                CupertinoActionSheetAction(
+                  onPressed: () async {
+                    final now = DateTime.now();
+                    final at = DateTime(
+                      date.year,
+                      date.month,
+                      date.day,
+                      now.hour,
+                      now.minute,
+                    );
+
+                    await _db.into(_db.cageCleanings).insert(
+                          CageCleaningsCompanion.insert(
+                            id: const Uuid().v4(),
+                            animalId: selectedAnimalId,
+                            at: at.toIso8601String(),
+                            type: cleaningType, // ✅ 그냥 String
+                            note: drift.Value(
+                              noteCtrl.text.trim().isEmpty
+                                  ? null
+                                  : noteCtrl.text.trim(),
+                            ),
+                          ),
+                        );
+
+                    Navigator.of(ctx).pop(); // 시트 닫기
+                  },
+                  isDefaultAction: true,
+                  child: const Text('저장'),
+                ),
+              ],
+              cancelButton: CupertinoActionSheetAction(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('취소'),
+              ),
+            );
+          },
+        ),
+      );
+    },
+  );
+
+  noteCtrl.dispose();
+}
+
+/// 케이지 청소 기록 수정 시트 (추가 UI와 동일한 스타일)
+Future<void> _showEditCleaningSheet(CageCleaning cleaning) async {
+  final noteCtrl = TextEditingController(text: cleaning.note ?? '');
+  String cleaningType = cleaning.type; // 'full' | 'spot' | 'water'
+
+  // 기존 날짜/시간
+  DateTime originalAt = DateTime.tryParse(cleaning.at) ?? DateTime.now();
+  DateTime selectedDate =
+      DateTime(originalAt.year, originalAt.month, originalAt.day);
+
+  // 개체 없으면 수정 불가
+  if (_animals.isEmpty) return;
+
+  // 기본 개체 선택 (기록에 저장된 animalId)
+  String selectedAnimalId = cleaning.animalId;
+  if (!_animals.any((a) => a.id == selectedAnimalId)) {
+    selectedAnimalId = _animals.first.id;
+  }
+
+  await showCupertinoModalPopup(
+    context: context,
+    builder: (ctx) {
+      final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
+      final size = MediaQuery.of(ctx).size;
+
+      return AnimatedPadding(
+        duration: const Duration(milliseconds: 200),
+        padding: EdgeInsets.only(bottom: bottomInset),
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: StatefulBuilder(
+            builder: (ctx, setStateSheet) {
+              final selectedAnimalName = _animals
+                  .firstWhere(
+                    (a) => a.id == selectedAnimalId,
+                    orElse: () => _animals.first,
+                  )
+                  .name;
+
+              return SafeArea(
+                top: false,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
+                  child: Container(
+                    width: size.width,
+                    color: CupertinoColors.systemBackground,
+                    child: SingleChildScrollView(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // 상단 바
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 36,
+                                  height: 4,
+                                  margin:
+                                      const EdgeInsets.only(bottom: 8, top: 4),
+                                  decoration: BoxDecoration(
+                                    color: CupertinoColors.systemGrey3,
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            // 제목(선택된 날짜)
+                            Center(
+                              child: Text(
+                                DateFormat.yMMMd('ko_KR').format(selectedDate),
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // 날짜 선택
+                            const Text(
+                              '날짜',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: CupertinoColors.secondaryLabel,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            CupertinoButton(
+                              padding: EdgeInsets.zero,
+                              onPressed: () async {
+                                DateTime tempDate = selectedDate;
+
+                                await showCupertinoModalPopup(
+                                  context: context,
+                                  builder: (pickerCtx) {
+                                    return Container(
+                                      color: CupertinoColors.systemBackground,
+                                      height: 260,
+                                      child: Column(
+                                        children: [
+                                          SizedBox(
+                                            height: 200,
+                                            child: CupertinoDatePicker(
+                                              mode:
+                                                  CupertinoDatePickerMode.date,
+                                              initialDateTime: selectedDate,
+                                              maximumDate: DateTime.now(),
+                                              onDateTimeChanged: (d) {
+                                                tempDate = d;
+                                              },
+                                            ),
+                                          ),
+                                          CupertinoButton(
+                                            child: const Text('완료'),
+                                            onPressed: () {
+                                              Navigator.of(pickerCtx).pop();
+                                              setStateSheet(() {
+                                                selectedDate = tempDate;
+                                              });
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: CupertinoColors.systemGrey5,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      DateFormat.yMMMd('ko_KR')
+                                          .format(selectedDate),
+                                      style: const TextStyle(fontSize: 15),
+                                    ),
+                                    const Icon(
+                                      CupertinoIcons.calendar,
+                                      size: 18,
+                                      color: CupertinoColors.systemGrey,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            // 개체 선택
+                            const Text(
+                              '개체',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: CupertinoColors.secondaryLabel,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            CupertinoButton(
+                              padding: EdgeInsets.zero,
+                              onPressed: () async {
+                                final result =
+                                    await showCupertinoModalPopup<String>(
+                                  context: ctx,
+                                  builder: (ctx2) {
+                                    return CupertinoActionSheet(
+                                      title: const Text('개체 선택'),
+                                      actions: [
+                                        for (final a in _animals)
+                                          CupertinoActionSheetAction(
+                                            onPressed: () =>
+                                                Navigator.of(ctx2).pop(a.id),
+                                            child: Text(a.name),
+                                          ),
+                                      ],
+                                      cancelButton:
+                                          CupertinoActionSheetAction(
+                                        onPressed: () =>
+                                            Navigator.of(ctx2).pop(),
+                                        child: const Text('취소'),
+                                      ),
+                                    );
+                                  },
+                                );
+
+                                if (result != null) {
+                                  setStateSheet(() {
+                                    selectedAnimalId = result;
+                                  });
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: CupertinoColors.systemGrey5,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      selectedAnimalName,
+                                      style: const TextStyle(fontSize: 15),
+                                    ),
+                                    const Icon(
+                                      CupertinoIcons.chevron_down,
+                                      size: 18,
+                                      color: CupertinoColors.systemGrey,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            // 청소 종류
+                            const Text(
+                              '청소 종류',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: CupertinoColors.secondaryLabel,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            CupertinoSegmentedControl<String>(
+                              groupValue: cleaningType,
+                              children: const {
+                                'full': Padding(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  child: Text('전체 청소'),
+                                ),
+                                'spot': Padding(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  child: Text('부분 청소'),
+                                ),
+                                'water': Padding(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  child: Text('물 교체'),
+                                ),
+                              },
+                              onValueChanged: (v) {
+                                setStateSheet(() {
+                                  cleaningType = v;
+                                });
+                              },
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            // 메모
+                            const Text(
+                              '메모 (선택)',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: CupertinoColors.secondaryLabel,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            CupertinoTextField(
+                              controller: noteCtrl,
+                              placeholder: '예: 바닥재 교체, 유목 세척 등',
+                              maxLines: 2,
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            // 버튼들
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: CupertinoButton(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 10,
+                                    ),
+                                    color: CupertinoColors.systemGrey5,
+                                    onPressed: () => Navigator.of(ctx).pop(),
+                                    child: const Text(
+                                      '취소',
+                                      style: TextStyle(
+                                        color: CupertinoColors.label,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: CupertinoButton.filled(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 10,
+                                    ),
+                                    onPressed: () async {
+                                      // 시간은 유지하고 날짜만 교체
+                                      final updatedAt = DateTime(
+                                        selectedDate.year,
+                                        selectedDate.month,
+                                        selectedDate.day,
+                                        originalAt.hour,
+                                        originalAt.minute,
+                                        originalAt.second,
+                                      );
+
+                                      await (_db.update(_db.cageCleanings)
+                                            ..where((t) =>
+                                                t.id.equals(cleaning.id)))
+                                          .write(
+                                        CageCleaningsCompanion(
+                                          animalId:
+                                              drift.Value(selectedAnimalId),
+                                          at: drift.Value(
+                                            updatedAt.toIso8601String(),
+                                          ),
+                                          type: drift.Value(cleaningType),
+                                          note: drift.Value(
+                                            noteCtrl.text.trim().isEmpty
+                                                ? null
+                                                : noteCtrl.text.trim(),
+                                          ),
+                                        ),
+                                      );
+
+                                      Navigator.of(ctx).pop();
+                                    },
+                                    child: const Text('저장'),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+    },
+  );
+
+  noteCtrl.dispose();
+}
+
+/// 기록 타입 선택 메소드 (급여/청소)
+Future<void> _showAddRecordTypeSheet(DateTime date) async {
+  await showCupertinoModalPopup(
+    context: context,
+    builder: (ctx) {
+      return CupertinoActionSheet(
+        title: const Text('어떤 기록을 추가할까요?'),
+        actions: [
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              _showAddFeedingSheet(date);
+            },
+            child: const Text('급여 기록'),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              _showAddCleaningSheet(date);
+            },
+            child: const Text('케이지 청소'),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.of(ctx).pop(),
+          child: const Text('취소'),
+        ),
+      );
+    },
+  );
+}
+
+
   Widget _buildDayCell(
     DateTime day, {
     bool isSelected = false,
@@ -974,6 +1658,7 @@ Future<void> _showEditFeedingSheet(Feeding feeding) async {
         _findAnimalById(_selectedAnimalId)?.name;
 
     return CupertinoPageScaffold(
+      backgroundColor: CupertinoColors.white,  // ← 이 줄 추가
       navigationBar: CupertinoNavigationBar(
         middle: Text(title),
         trailing: Row(
@@ -1088,6 +1773,8 @@ Future<void> _showEditFeedingSheet(Feeding feeding) async {
                   calendarFormat: CalendarFormat.month,
                   daysOfWeekVisible: false,
                   headerVisible: false,
+                  rowHeight: 40,
+                  // daysOfWeekVisible: 16,
                   calendarBuilders: CalendarBuilders(
                     defaultBuilder: (context, day, focusedDay) {
                       return _buildDayCell(day);
@@ -1134,9 +1821,9 @@ Future<void> _showEditFeedingSheet(Feeding feeding) async {
               ),
             ),
 
-            // 하단 다이어리 영역 + 추가 버튼
+            // 하단 다이어리 영역 + 섹션 분리(청소/급여)
             SizedBox(
-              height: 220,
+              height: 300, // ✅ 섹션 2개라 기존(180)보다 넉넉하게
               width: double.infinity,
               child: Container(
                 decoration: BoxDecoration(
@@ -1149,196 +1836,379 @@ Future<void> _showEditFeedingSheet(Feeding feeding) async {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 날짜 / "급여 기록" 타이틀 + +버튼
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                    // ----------------------------
+                    // 상단: 날짜 + 청소아이콘 + +버튼
+                    // ----------------------------
+                    StreamBuilder<List<CageCleaning>>(
+                      stream: _watchCleaningsForDay(selectedDay),
+                      builder: (context, snapshot) {
+                        final cleanings = snapshot.data ?? const [];
+                        final hasCleaning = cleanings.isNotEmpty;
+
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              DateFormat.yMMMd('ko_KR').format(selectedDay),
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
+                            // 날짜 + 청소 아이콘
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      DateFormat.yMMMd('ko_KR').format(selectedDay),
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    if (hasCleaning) ...[
+                                      const SizedBox(width: 6),
+                                      const Icon(
+                                        CupertinoIcons.sparkles,
+                                        size: 16,
+                                        color: CupertinoColors.systemGreen,
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  _selectedAnimalId == null
+                                      ? '전체 기록'
+                                      : '기록 · ${currentAnimalName ?? ''}',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: CupertinoColors.secondaryLabel,
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              _selectedAnimalId == null
-                                  ? '급여 기록 · 전체'
-                                  : '급여 기록 · ${currentAnimalName ?? ''}',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: CupertinoColors.secondaryLabel,
+
+                            // + 버튼 (급여/청소 선택 시트)
+                            CupertinoButton(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              minSize: 24,
+                              onPressed: () => _showAddRecordTypeSheet(selectedDay),
+                              child: const Icon(
+                                CupertinoIcons.add,
+                                size: 22,
                               ),
                             ),
                           ],
-                        ),
-                        CupertinoButton(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          minSize: 24,
-                          onPressed: () => _showAddFeedingSheet(selectedDay),
-                          child: const Icon(
-                            CupertinoIcons.add,
-                            size: 22,
-                          ),
-                        ),
-                      ],
+                        );
+                      },
                     ),
-                    const SizedBox(height: 8),
+
+                    const SizedBox(height: 10),
+
+                    // ----------------------------
+                    // 섹션 2개를 아래 영역에서 스크롤
+                    // ----------------------------
                     Expanded(
-                      child: StreamBuilder<List<Feeding>>(
-                        stream: _watchFeedingsForDay(selectedDay),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Center(
-                              child: CupertinoActivityIndicator(),
-                            );
-                          }
-                          final items = snapshot.data ?? const [];
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            // ============================
+                            // 1) 케이지 청소 섹션
+                            // ============================
+                            _SectionHeader(
+                              title: '케이지 청소',
+                              icon: CupertinoIcons.sparkles,
+                            ),
+                            const SizedBox(height: 6),
 
-                          if (items.isEmpty) {
-                            return const Center(
-                              child: Text(
-                                '이 날짜에는 아직 급여 기록이 없어요.',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: CupertinoColors.secondaryLabel,
-                                ),
-                              ),
-                            );
-                          }
+                            StreamBuilder<List<CageCleaning>>(
+                              stream: _watchCleaningsForDay(selectedDay),
+                              builder: (context, snapshot) {
+                                final items = snapshot.data ?? const [];
 
-                          return ListView.separated(
-                            itemCount: items.length,
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(height: 6),
-                            itemBuilder: (context, index) {
-                              final f = items[index];
-                              final at = DateTime.tryParse(f.at) ??
-                                  DateTime.now();
-                              final timeStr =
-                                  DateFormat.Hm('ko_KR').format(at);
+                                if (snapshot.connectionState == ConnectionState.waiting) {
+                                  return const Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 10),
+                                    child: Center(child: CupertinoActivityIndicator()),
+                                  );
+                                }
 
-                              // 🔹 항상 개체 이름을 붙여서 보여주기
-                              final animalName =
-                                  _findAnimalById(f.animalId)?.name;
-
-                              final title = StringBuffer();
-                              if (animalName != null) {
-                                title.write('$animalName · ');
-                              }
-                              title.write('${f.foodType ?? '먹이'} ');
-                              if (f.amount != null) {
-                                title.write('${f.amount!.toInt()}');
-                              }
-                              if (f.unit != null) {
-                                title.write(f.unit);
-                              }
-
-                              return Dismissible(
-                                key: ValueKey(f.id),
-                                direction: DismissDirection.endToStart,
-                                background: Container(
-                                  alignment: Alignment.centerRight,
-                                  padding:
-                                      const EdgeInsets.only(right: 16),
-                                  color: CupertinoColors.systemRed,
-                                  child: const Icon(
-                                    CupertinoIcons.delete_solid,
-                                    color: CupertinoColors.white,
-                                  ),
-                                ),
-                                confirmDismiss: (_) async {
-                                  final result =
-                                      await showCupertinoDialog<bool>(
-                                    context: context,
-                                    builder: (ctx) =>
-                                        CupertinoAlertDialog(
-                                      title: const Text('급여 기록 삭제'),
-                                      content: const Text(
-                                          '이 급여 기록을 삭제할까요?'),
-                                      actions: [
-                                        CupertinoDialogAction(
-                                          onPressed: () =>
-                                              Navigator.of(ctx).pop(false),
-                                          child: const Text('취소'),
+                                if (items.isEmpty) {
+                                  return const Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 10),
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        '청소 기록이 없어요.',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: CupertinoColors.secondaryLabel,
                                         ),
-                                        CupertinoDialogAction(
-                                          isDestructiveAction: true,
-                                          onPressed: () =>
-                                              Navigator.of(ctx).pop(true),
-                                          child: const Text('삭제'),
-                                        ),
-                                      ],
+                                      ),
                                     ),
                                   );
-                                  return result ?? false;
-                                },
-                                onDismissed: (_) {
-                                  (_db.delete(_db.feedings)
-                                        ..where((t) =>
-                                            t.id.equals(f.id)))
-                                      .go();
-                                },
-                                child: GestureDetector(
-                                  onTap: () async {
-                                    _showEditFeedingSheet(f);
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 6, horizontal: 10),
-                                    decoration: BoxDecoration(
-                                      color: CupertinoColors.white,
-                                      borderRadius:
-                                          BorderRadius.circular(10),
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              title.toString(),
-                                              style: const TextStyle(
-                                                fontSize: 14,
-                                                fontWeight:
-                                                    FontWeight.w500,
+                                }
+
+                                return ListView.separated(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: items.length,
+                                  separatorBuilder: (_, __) => const SizedBox(height: 6),
+                                  itemBuilder: (context, index) {
+                                    final c = items[index];
+                                    final at = DateTime.tryParse(c.at) ?? DateTime.now();
+                                    final timeStr = DateFormat.Hm('ko_KR').format(at);
+
+                                    final animalName = _findAnimalById(c.animalId)?.name ?? '알 수 없음';
+
+                                    String typeLabel(String t) {
+                                      switch (t) {
+                                        case 'spot':
+                                          return '부분 청소';
+                                        case 'water':
+                                          return '물 교체';
+                                        case 'full':
+                                        default:
+                                          return '전체 청소';
+                                      }
+                                    }
+
+                                    final title = '$animalName · ${typeLabel(c.type)}';
+
+                                    return Dismissible(
+                                      key: ValueKey(c.id),
+                                      direction: DismissDirection.endToStart,
+                                      background: Container(
+                                        alignment: Alignment.centerRight,
+                                        padding: const EdgeInsets.only(right: 16),
+                                        color: CupertinoColors.systemRed,
+                                        child: const Icon(
+                                          CupertinoIcons.delete_solid,
+                                          color: CupertinoColors.white,
+                                        ),
+                                      ),
+                                      confirmDismiss: (_) async {
+                                        final result = await showCupertinoDialog<bool>(
+                                          context: context,
+                                          builder: (ctx) => CupertinoAlertDialog(
+                                            title: const Text('청소 기록 삭제'),
+                                            content: const Text('이 청소 기록을 삭제할까요?'),
+                                            actions: [
+                                              CupertinoDialogAction(
+                                                onPressed: () => Navigator.of(ctx).pop(false),
+                                                child: const Text('취소'),
                                               ),
-                                            ),
-                                            if ((f.note ?? '').isNotEmpty)
-                                              Text(
-                                                f.note!,
-                                                style: const TextStyle(
-                                                  fontSize: 12,
-                                                  color: CupertinoColors
-                                                      .secondaryLabel,
+                                              CupertinoDialogAction(
+                                                isDestructiveAction: true,
+                                                onPressed: () => Navigator.of(ctx).pop(true),
+                                                child: const Text('삭제'),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                        return result ?? false;
+                                      },
+                                      onDismissed: (_) {
+                                        (_db.delete(_db.cageCleanings)..where((t) => t.id.equals(c.id))).go();
+                                      },
+                                      child: GestureDetector(
+                                        onTap: () => _showEditCleaningSheet(c),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 8,
+                                            horizontal: 10,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: CupertinoColors.white,
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      title,
+                                                      style: const TextStyle(
+                                                        fontSize: 14,
+                                                        fontWeight: FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                    if ((c.note ?? '').trim().isNotEmpty)
+                                                      Text(
+                                                        c.note!.trim(),
+                                                        style: const TextStyle(
+                                                          fontSize: 12,
+                                                          color: CupertinoColors.secondaryLabel,
+                                                        ),
+                                                      ),
+                                                  ],
                                                 ),
                                               ),
-                                          ],
-                                        ),
-                                        Text(
-                                          timeStr,
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            color:
-                                                CupertinoColors.secondaryLabel,
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                timeStr,
+                                                style: const TextStyle(
+                                                  fontSize: 12,
+                                                  color: CupertinoColors.secondaryLabel,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
-                                      ],
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+
+                            const SizedBox(height: 14),
+
+                            // ============================
+                            // 2) 급여 기록 섹션
+                            // ============================
+                            _SectionHeader(
+                              title: '급여 기록',
+                              icon: CupertinoIcons.heart,
+                            ),
+                            const SizedBox(height: 6),
+
+                            StreamBuilder<List<Feeding>>(
+                              stream: _watchFeedingsForDay(selectedDay),
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState == ConnectionState.waiting) {
+                                  return const Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 10),
+                                    child: Center(child: CupertinoActivityIndicator()),
+                                  );
+                                }
+
+                                final items = snapshot.data ?? const [];
+                                if (items.isEmpty) {
+                                  return const Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 10),
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        '급여 기록이 없어요.',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: CupertinoColors.secondaryLabel,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        },
+                                  );
+                                }
+
+                                return ListView.separated(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: items.length,
+                                  separatorBuilder: (_, __) => const SizedBox(height: 6),
+                                  itemBuilder: (context, index) {
+                                    final f = items[index];
+                                    final at = DateTime.tryParse(f.at) ?? DateTime.now();
+                                    final timeStr = DateFormat.Hm('ko_KR').format(at);
+
+                                    final animalName = _findAnimalById(f.animalId)?.name;
+
+                                    final title = StringBuffer();
+                                    if (animalName != null) title.write('$animalName · ');
+                                    title.write('${f.foodType ?? '먹이'} ');
+                                    if (f.amount != null) title.write('${f.amount!.toInt()}');
+                                    if (f.unit != null) title.write(f.unit);
+
+                                    return Dismissible(
+                                      key: ValueKey(f.id),
+                                      direction: DismissDirection.endToStart,
+                                      background: Container(
+                                        alignment: Alignment.centerRight,
+                                        padding: const EdgeInsets.only(right: 16),
+                                        color: CupertinoColors.systemRed,
+                                        child: const Icon(
+                                          CupertinoIcons.delete_solid,
+                                          color: CupertinoColors.white,
+                                        ),
+                                      ),
+                                      confirmDismiss: (_) async {
+                                        final result = await showCupertinoDialog<bool>(
+                                          context: context,
+                                          builder: (ctx) => CupertinoAlertDialog(
+                                            title: const Text('급여 기록 삭제'),
+                                            content: const Text('이 급여 기록을 삭제할까요?'),
+                                            actions: [
+                                              CupertinoDialogAction(
+                                                onPressed: () => Navigator.of(ctx).pop(false),
+                                                child: const Text('취소'),
+                                              ),
+                                              CupertinoDialogAction(
+                                                isDestructiveAction: true,
+                                                onPressed: () => Navigator.of(ctx).pop(true),
+                                                child: const Text('삭제'),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                        return result ?? false;
+                                      },
+                                      onDismissed: (_) {
+                                        (_db.delete(_db.feedings)..where((t) => t.id.equals(f.id))).go();
+                                      },
+                                      child: GestureDetector(
+                                        onTap: () => _showEditFeedingSheet(f),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 8,
+                                            horizontal: 10,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: CupertinoColors.white,
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      title.toString(),
+                                                      style: const TextStyle(
+                                                        fontSize: 14,
+                                                        fontWeight: FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                    if ((f.note ?? '').trim().isNotEmpty)
+                                                      Text(
+                                                        f.note!.trim(),
+                                                        style: const TextStyle(
+                                                          fontSize: 12,
+                                                          color: CupertinoColors.secondaryLabel,
+                                                        ),
+                                                      ),
+                                                  ],
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                timeStr,
+                                                style: const TextStyle(
+                                                  fontSize: 12,
+                                                  color: CupertinoColors.secondaryLabel,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -1378,6 +2248,35 @@ class _WeekdayLabel extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final IconData icon;
+
+  const _SectionHeader({
+    Key? key,
+    required this.title,
+    required this.icon,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: CupertinoColors.secondaryLabel),
+        const SizedBox(width: 6),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: CupertinoColors.secondaryLabel,
+          ),
+        ),
+      ],
     );
   }
 }

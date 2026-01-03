@@ -79,6 +79,30 @@ class $AnimalsTable extends Animals with TableInfo<$AnimalsTable, Animal> {
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _isSickMeta = const VerificationMeta('isSick');
+  @override
+  late final GeneratedColumn<bool> isSick = GeneratedColumn<bool>(
+    'is_sick',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_sick" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _healthNoteMeta = const VerificationMeta(
+    'healthNote',
+  );
+  @override
+  late final GeneratedColumn<String> healthNote = GeneratedColumn<String>(
+    'health_note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _activeMeta = const VerificationMeta('active');
   @override
   late final GeneratedColumn<bool> active = GeneratedColumn<bool>(
@@ -101,6 +125,8 @@ class $AnimalsTable extends Animals with TableInfo<$AnimalsTable, Animal> {
     birthDate,
     profileImagePath,
     colorValue,
+    isSick,
+    healthNote,
     active,
   ];
   @override
@@ -161,6 +187,18 @@ class $AnimalsTable extends Animals with TableInfo<$AnimalsTable, Animal> {
         colorValue.isAcceptableOrUnknown(data['color_value']!, _colorValueMeta),
       );
     }
+    if (data.containsKey('is_sick')) {
+      context.handle(
+        _isSickMeta,
+        isSick.isAcceptableOrUnknown(data['is_sick']!, _isSickMeta),
+      );
+    }
+    if (data.containsKey('health_note')) {
+      context.handle(
+        _healthNoteMeta,
+        healthNote.isAcceptableOrUnknown(data['health_note']!, _healthNoteMeta),
+      );
+    }
     if (data.containsKey('active')) {
       context.handle(
         _activeMeta,
@@ -204,6 +242,14 @@ class $AnimalsTable extends Animals with TableInfo<$AnimalsTable, Animal> {
         DriftSqlType.int,
         data['${effectivePrefix}color_value'],
       ),
+      isSick: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_sick'],
+      )!,
+      healthNote: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}health_note'],
+      ),
       active: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}active'],
@@ -225,6 +271,8 @@ class Animal extends DataClass implements Insertable<Animal> {
   final String? birthDate;
   final String? profileImagePath;
   final int? colorValue;
+  final bool isSick;
+  final String? healthNote;
   final bool active;
   const Animal({
     required this.id,
@@ -234,6 +282,8 @@ class Animal extends DataClass implements Insertable<Animal> {
     this.birthDate,
     this.profileImagePath,
     this.colorValue,
+    required this.isSick,
+    this.healthNote,
     required this.active,
   });
   @override
@@ -256,6 +306,10 @@ class Animal extends DataClass implements Insertable<Animal> {
     if (!nullToAbsent || colorValue != null) {
       map['color_value'] = Variable<int>(colorValue);
     }
+    map['is_sick'] = Variable<bool>(isSick);
+    if (!nullToAbsent || healthNote != null) {
+      map['health_note'] = Variable<String>(healthNote);
+    }
     map['active'] = Variable<bool>(active);
     return map;
   }
@@ -277,6 +331,10 @@ class Animal extends DataClass implements Insertable<Animal> {
       colorValue: colorValue == null && nullToAbsent
           ? const Value.absent()
           : Value(colorValue),
+      isSick: Value(isSick),
+      healthNote: healthNote == null && nullToAbsent
+          ? const Value.absent()
+          : Value(healthNote),
       active: Value(active),
     );
   }
@@ -294,6 +352,8 @@ class Animal extends DataClass implements Insertable<Animal> {
       birthDate: serializer.fromJson<String?>(json['birthDate']),
       profileImagePath: serializer.fromJson<String?>(json['profileImagePath']),
       colorValue: serializer.fromJson<int?>(json['colorValue']),
+      isSick: serializer.fromJson<bool>(json['isSick']),
+      healthNote: serializer.fromJson<String?>(json['healthNote']),
       active: serializer.fromJson<bool>(json['active']),
     );
   }
@@ -308,6 +368,8 @@ class Animal extends DataClass implements Insertable<Animal> {
       'birthDate': serializer.toJson<String?>(birthDate),
       'profileImagePath': serializer.toJson<String?>(profileImagePath),
       'colorValue': serializer.toJson<int?>(colorValue),
+      'isSick': serializer.toJson<bool>(isSick),
+      'healthNote': serializer.toJson<String?>(healthNote),
       'active': serializer.toJson<bool>(active),
     };
   }
@@ -320,6 +382,8 @@ class Animal extends DataClass implements Insertable<Animal> {
     Value<String?> birthDate = const Value.absent(),
     Value<String?> profileImagePath = const Value.absent(),
     Value<int?> colorValue = const Value.absent(),
+    bool? isSick,
+    Value<String?> healthNote = const Value.absent(),
     bool? active,
   }) => Animal(
     id: id ?? this.id,
@@ -331,6 +395,8 @@ class Animal extends DataClass implements Insertable<Animal> {
         ? profileImagePath.value
         : this.profileImagePath,
     colorValue: colorValue.present ? colorValue.value : this.colorValue,
+    isSick: isSick ?? this.isSick,
+    healthNote: healthNote.present ? healthNote.value : this.healthNote,
     active: active ?? this.active,
   );
   Animal copyWithCompanion(AnimalsCompanion data) {
@@ -346,6 +412,10 @@ class Animal extends DataClass implements Insertable<Animal> {
       colorValue: data.colorValue.present
           ? data.colorValue.value
           : this.colorValue,
+      isSick: data.isSick.present ? data.isSick.value : this.isSick,
+      healthNote: data.healthNote.present
+          ? data.healthNote.value
+          : this.healthNote,
       active: data.active.present ? data.active.value : this.active,
     );
   }
@@ -360,6 +430,8 @@ class Animal extends DataClass implements Insertable<Animal> {
           ..write('birthDate: $birthDate, ')
           ..write('profileImagePath: $profileImagePath, ')
           ..write('colorValue: $colorValue, ')
+          ..write('isSick: $isSick, ')
+          ..write('healthNote: $healthNote, ')
           ..write('active: $active')
           ..write(')'))
         .toString();
@@ -374,6 +446,8 @@ class Animal extends DataClass implements Insertable<Animal> {
     birthDate,
     profileImagePath,
     colorValue,
+    isSick,
+    healthNote,
     active,
   );
   @override
@@ -387,6 +461,8 @@ class Animal extends DataClass implements Insertable<Animal> {
           other.birthDate == this.birthDate &&
           other.profileImagePath == this.profileImagePath &&
           other.colorValue == this.colorValue &&
+          other.isSick == this.isSick &&
+          other.healthNote == this.healthNote &&
           other.active == this.active);
 }
 
@@ -398,6 +474,8 @@ class AnimalsCompanion extends UpdateCompanion<Animal> {
   final Value<String?> birthDate;
   final Value<String?> profileImagePath;
   final Value<int?> colorValue;
+  final Value<bool> isSick;
+  final Value<String?> healthNote;
   final Value<bool> active;
   final Value<int> rowid;
   const AnimalsCompanion({
@@ -408,6 +486,8 @@ class AnimalsCompanion extends UpdateCompanion<Animal> {
     this.birthDate = const Value.absent(),
     this.profileImagePath = const Value.absent(),
     this.colorValue = const Value.absent(),
+    this.isSick = const Value.absent(),
+    this.healthNote = const Value.absent(),
     this.active = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -419,6 +499,8 @@ class AnimalsCompanion extends UpdateCompanion<Animal> {
     this.birthDate = const Value.absent(),
     this.profileImagePath = const Value.absent(),
     this.colorValue = const Value.absent(),
+    this.isSick = const Value.absent(),
+    this.healthNote = const Value.absent(),
     this.active = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -431,6 +513,8 @@ class AnimalsCompanion extends UpdateCompanion<Animal> {
     Expression<String>? birthDate,
     Expression<String>? profileImagePath,
     Expression<int>? colorValue,
+    Expression<bool>? isSick,
+    Expression<String>? healthNote,
     Expression<bool>? active,
     Expression<int>? rowid,
   }) {
@@ -442,6 +526,8 @@ class AnimalsCompanion extends UpdateCompanion<Animal> {
       if (birthDate != null) 'birth_date': birthDate,
       if (profileImagePath != null) 'profile_image_path': profileImagePath,
       if (colorValue != null) 'color_value': colorValue,
+      if (isSick != null) 'is_sick': isSick,
+      if (healthNote != null) 'health_note': healthNote,
       if (active != null) 'active': active,
       if (rowid != null) 'rowid': rowid,
     });
@@ -455,6 +541,8 @@ class AnimalsCompanion extends UpdateCompanion<Animal> {
     Value<String?>? birthDate,
     Value<String?>? profileImagePath,
     Value<int?>? colorValue,
+    Value<bool>? isSick,
+    Value<String?>? healthNote,
     Value<bool>? active,
     Value<int>? rowid,
   }) {
@@ -466,6 +554,8 @@ class AnimalsCompanion extends UpdateCompanion<Animal> {
       birthDate: birthDate ?? this.birthDate,
       profileImagePath: profileImagePath ?? this.profileImagePath,
       colorValue: colorValue ?? this.colorValue,
+      isSick: isSick ?? this.isSick,
+      healthNote: healthNote ?? this.healthNote,
       active: active ?? this.active,
       rowid: rowid ?? this.rowid,
     );
@@ -495,6 +585,12 @@ class AnimalsCompanion extends UpdateCompanion<Animal> {
     if (colorValue.present) {
       map['color_value'] = Variable<int>(colorValue.value);
     }
+    if (isSick.present) {
+      map['is_sick'] = Variable<bool>(isSick.value);
+    }
+    if (healthNote.present) {
+      map['health_note'] = Variable<String>(healthNote.value);
+    }
     if (active.present) {
       map['active'] = Variable<bool>(active.value);
     }
@@ -514,6 +610,8 @@ class AnimalsCompanion extends UpdateCompanion<Animal> {
           ..write('birthDate: $birthDate, ')
           ..write('profileImagePath: $profileImagePath, ')
           ..write('colorValue: $colorValue, ')
+          ..write('isSick: $isSick, ')
+          ..write('healthNote: $healthNote, ')
           ..write('active: $active, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -1019,16 +1117,1728 @@ class FeedingsCompanion extends UpdateCompanion<Feeding> {
   }
 }
 
+class $CagesTable extends Cages with TableInfo<$CagesTable, Cage> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CagesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _locationMeta = const VerificationMeta(
+    'location',
+  );
+  @override
+  late final GeneratedColumn<String> location = GeneratedColumn<String>(
+    'location',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, name, location, note];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'cages';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Cage> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('location')) {
+      context.handle(
+        _locationMeta,
+        location.isAcceptableOrUnknown(data['location']!, _locationMeta),
+      );
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Cage map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Cage(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      location: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}location'],
+      ),
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+    );
+  }
+
+  @override
+  $CagesTable createAlias(String alias) {
+    return $CagesTable(attachedDatabase, alias);
+  }
+}
+
+class Cage extends DataClass implements Insertable<Cage> {
+  final String id;
+  final String name;
+  final String? location;
+  final String? note;
+  const Cage({required this.id, required this.name, this.location, this.note});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || location != null) {
+      map['location'] = Variable<String>(location);
+    }
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    return map;
+  }
+
+  CagesCompanion toCompanion(bool nullToAbsent) {
+    return CagesCompanion(
+      id: Value(id),
+      name: Value(name),
+      location: location == null && nullToAbsent
+          ? const Value.absent()
+          : Value(location),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+    );
+  }
+
+  factory Cage.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Cage(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      location: serializer.fromJson<String?>(json['location']),
+      note: serializer.fromJson<String?>(json['note']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'location': serializer.toJson<String?>(location),
+      'note': serializer.toJson<String?>(note),
+    };
+  }
+
+  Cage copyWith({
+    String? id,
+    String? name,
+    Value<String?> location = const Value.absent(),
+    Value<String?> note = const Value.absent(),
+  }) => Cage(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    location: location.present ? location.value : this.location,
+    note: note.present ? note.value : this.note,
+  );
+  Cage copyWithCompanion(CagesCompanion data) {
+    return Cage(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      location: data.location.present ? data.location.value : this.location,
+      note: data.note.present ? data.note.value : this.note,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Cage(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('location: $location, ')
+          ..write('note: $note')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, name, location, note);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Cage &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.location == this.location &&
+          other.note == this.note);
+}
+
+class CagesCompanion extends UpdateCompanion<Cage> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String?> location;
+  final Value<String?> note;
+  final Value<int> rowid;
+  const CagesCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.location = const Value.absent(),
+    this.note = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CagesCompanion.insert({
+    required String id,
+    required String name,
+    this.location = const Value.absent(),
+    this.note = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name);
+  static Insertable<Cage> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? location,
+    Expression<String>? note,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (location != null) 'location': location,
+      if (note != null) 'note': note,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CagesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String?>? location,
+    Value<String?>? note,
+    Value<int>? rowid,
+  }) {
+    return CagesCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      location: location ?? this.location,
+      note: note ?? this.note,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (location.present) {
+      map['location'] = Variable<String>(location.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CagesCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('location: $location, ')
+          ..write('note: $note, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $AnimalCagesTable extends AnimalCages
+    with TableInfo<$AnimalCagesTable, AnimalCage> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AnimalCagesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _animalIdMeta = const VerificationMeta(
+    'animalId',
+  );
+  @override
+  late final GeneratedColumn<String> animalId = GeneratedColumn<String>(
+    'animal_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _cageIdMeta = const VerificationMeta('cageId');
+  @override
+  late final GeneratedColumn<String> cageId = GeneratedColumn<String>(
+    'cage_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [animalId, cageId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'animal_cages';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AnimalCage> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('animal_id')) {
+      context.handle(
+        _animalIdMeta,
+        animalId.isAcceptableOrUnknown(data['animal_id']!, _animalIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_animalIdMeta);
+    }
+    if (data.containsKey('cage_id')) {
+      context.handle(
+        _cageIdMeta,
+        cageId.isAcceptableOrUnknown(data['cage_id']!, _cageIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_cageIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {animalId};
+  @override
+  AnimalCage map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AnimalCage(
+      animalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}animal_id'],
+      )!,
+      cageId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cage_id'],
+      )!,
+    );
+  }
+
+  @override
+  $AnimalCagesTable createAlias(String alias) {
+    return $AnimalCagesTable(attachedDatabase, alias);
+  }
+}
+
+class AnimalCage extends DataClass implements Insertable<AnimalCage> {
+  final String animalId;
+  final String cageId;
+  const AnimalCage({required this.animalId, required this.cageId});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['animal_id'] = Variable<String>(animalId);
+    map['cage_id'] = Variable<String>(cageId);
+    return map;
+  }
+
+  AnimalCagesCompanion toCompanion(bool nullToAbsent) {
+    return AnimalCagesCompanion(
+      animalId: Value(animalId),
+      cageId: Value(cageId),
+    );
+  }
+
+  factory AnimalCage.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AnimalCage(
+      animalId: serializer.fromJson<String>(json['animalId']),
+      cageId: serializer.fromJson<String>(json['cageId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'animalId': serializer.toJson<String>(animalId),
+      'cageId': serializer.toJson<String>(cageId),
+    };
+  }
+
+  AnimalCage copyWith({String? animalId, String? cageId}) => AnimalCage(
+    animalId: animalId ?? this.animalId,
+    cageId: cageId ?? this.cageId,
+  );
+  AnimalCage copyWithCompanion(AnimalCagesCompanion data) {
+    return AnimalCage(
+      animalId: data.animalId.present ? data.animalId.value : this.animalId,
+      cageId: data.cageId.present ? data.cageId.value : this.cageId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AnimalCage(')
+          ..write('animalId: $animalId, ')
+          ..write('cageId: $cageId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(animalId, cageId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AnimalCage &&
+          other.animalId == this.animalId &&
+          other.cageId == this.cageId);
+}
+
+class AnimalCagesCompanion extends UpdateCompanion<AnimalCage> {
+  final Value<String> animalId;
+  final Value<String> cageId;
+  final Value<int> rowid;
+  const AnimalCagesCompanion({
+    this.animalId = const Value.absent(),
+    this.cageId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AnimalCagesCompanion.insert({
+    required String animalId,
+    required String cageId,
+    this.rowid = const Value.absent(),
+  }) : animalId = Value(animalId),
+       cageId = Value(cageId);
+  static Insertable<AnimalCage> custom({
+    Expression<String>? animalId,
+    Expression<String>? cageId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (animalId != null) 'animal_id': animalId,
+      if (cageId != null) 'cage_id': cageId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AnimalCagesCompanion copyWith({
+    Value<String>? animalId,
+    Value<String>? cageId,
+    Value<int>? rowid,
+  }) {
+    return AnimalCagesCompanion(
+      animalId: animalId ?? this.animalId,
+      cageId: cageId ?? this.cageId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (animalId.present) {
+      map['animal_id'] = Variable<String>(animalId.value);
+    }
+    if (cageId.present) {
+      map['cage_id'] = Variable<String>(cageId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AnimalCagesCompanion(')
+          ..write('animalId: $animalId, ')
+          ..write('cageId: $cageId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CageCleaningsTable extends CageCleanings
+    with TableInfo<$CageCleaningsTable, CageCleaning> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CageCleaningsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _animalIdMeta = const VerificationMeta(
+    'animalId',
+  );
+  @override
+  late final GeneratedColumn<String> animalId = GeneratedColumn<String>(
+    'animal_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _atMeta = const VerificationMeta('at');
+  @override
+  late final GeneratedColumn<String> at = GeneratedColumn<String>(
+    'at',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+    'type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, animalId, at, type, note];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'cage_cleanings';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CageCleaning> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('animal_id')) {
+      context.handle(
+        _animalIdMeta,
+        animalId.isAcceptableOrUnknown(data['animal_id']!, _animalIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_animalIdMeta);
+    }
+    if (data.containsKey('at')) {
+      context.handle(_atMeta, at.isAcceptableOrUnknown(data['at']!, _atMeta));
+    } else if (isInserting) {
+      context.missing(_atMeta);
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+        _typeMeta,
+        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_typeMeta);
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CageCleaning map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CageCleaning(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      animalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}animal_id'],
+      )!,
+      at: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}at'],
+      )!,
+      type: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}type'],
+      )!,
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+    );
+  }
+
+  @override
+  $CageCleaningsTable createAlias(String alias) {
+    return $CageCleaningsTable(attachedDatabase, alias);
+  }
+}
+
+class CageCleaning extends DataClass implements Insertable<CageCleaning> {
+  final String id;
+  final String animalId;
+  final String at;
+  final String type;
+  final String? note;
+  const CageCleaning({
+    required this.id,
+    required this.animalId,
+    required this.at,
+    required this.type,
+    this.note,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['animal_id'] = Variable<String>(animalId);
+    map['at'] = Variable<String>(at);
+    map['type'] = Variable<String>(type);
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    return map;
+  }
+
+  CageCleaningsCompanion toCompanion(bool nullToAbsent) {
+    return CageCleaningsCompanion(
+      id: Value(id),
+      animalId: Value(animalId),
+      at: Value(at),
+      type: Value(type),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+    );
+  }
+
+  factory CageCleaning.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CageCleaning(
+      id: serializer.fromJson<String>(json['id']),
+      animalId: serializer.fromJson<String>(json['animalId']),
+      at: serializer.fromJson<String>(json['at']),
+      type: serializer.fromJson<String>(json['type']),
+      note: serializer.fromJson<String?>(json['note']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'animalId': serializer.toJson<String>(animalId),
+      'at': serializer.toJson<String>(at),
+      'type': serializer.toJson<String>(type),
+      'note': serializer.toJson<String?>(note),
+    };
+  }
+
+  CageCleaning copyWith({
+    String? id,
+    String? animalId,
+    String? at,
+    String? type,
+    Value<String?> note = const Value.absent(),
+  }) => CageCleaning(
+    id: id ?? this.id,
+    animalId: animalId ?? this.animalId,
+    at: at ?? this.at,
+    type: type ?? this.type,
+    note: note.present ? note.value : this.note,
+  );
+  CageCleaning copyWithCompanion(CageCleaningsCompanion data) {
+    return CageCleaning(
+      id: data.id.present ? data.id.value : this.id,
+      animalId: data.animalId.present ? data.animalId.value : this.animalId,
+      at: data.at.present ? data.at.value : this.at,
+      type: data.type.present ? data.type.value : this.type,
+      note: data.note.present ? data.note.value : this.note,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CageCleaning(')
+          ..write('id: $id, ')
+          ..write('animalId: $animalId, ')
+          ..write('at: $at, ')
+          ..write('type: $type, ')
+          ..write('note: $note')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, animalId, at, type, note);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CageCleaning &&
+          other.id == this.id &&
+          other.animalId == this.animalId &&
+          other.at == this.at &&
+          other.type == this.type &&
+          other.note == this.note);
+}
+
+class CageCleaningsCompanion extends UpdateCompanion<CageCleaning> {
+  final Value<String> id;
+  final Value<String> animalId;
+  final Value<String> at;
+  final Value<String> type;
+  final Value<String?> note;
+  final Value<int> rowid;
+  const CageCleaningsCompanion({
+    this.id = const Value.absent(),
+    this.animalId = const Value.absent(),
+    this.at = const Value.absent(),
+    this.type = const Value.absent(),
+    this.note = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CageCleaningsCompanion.insert({
+    required String id,
+    required String animalId,
+    required String at,
+    required String type,
+    this.note = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       animalId = Value(animalId),
+       at = Value(at),
+       type = Value(type);
+  static Insertable<CageCleaning> custom({
+    Expression<String>? id,
+    Expression<String>? animalId,
+    Expression<String>? at,
+    Expression<String>? type,
+    Expression<String>? note,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (animalId != null) 'animal_id': animalId,
+      if (at != null) 'at': at,
+      if (type != null) 'type': type,
+      if (note != null) 'note': note,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CageCleaningsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? animalId,
+    Value<String>? at,
+    Value<String>? type,
+    Value<String?>? note,
+    Value<int>? rowid,
+  }) {
+    return CageCleaningsCompanion(
+      id: id ?? this.id,
+      animalId: animalId ?? this.animalId,
+      at: at ?? this.at,
+      type: type ?? this.type,
+      note: note ?? this.note,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (animalId.present) {
+      map['animal_id'] = Variable<String>(animalId.value);
+    }
+    if (at.present) {
+      map['at'] = Variable<String>(at.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CageCleaningsCompanion(')
+          ..write('id: $id, ')
+          ..write('animalId: $animalId, ')
+          ..write('at: $at, ')
+          ..write('type: $type, ')
+          ..write('note: $note, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $MedicationLogsTable extends MedicationLogs
+    with TableInfo<$MedicationLogsTable, MedicationLog> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MedicationLogsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _animalIdMeta = const VerificationMeta(
+    'animalId',
+  );
+  @override
+  late final GeneratedColumn<String> animalId = GeneratedColumn<String>(
+    'animal_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _atMeta = const VerificationMeta('at');
+  @override
+  late final GeneratedColumn<String> at = GeneratedColumn<String>(
+    'at',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _medicineNameMeta = const VerificationMeta(
+    'medicineName',
+  );
+  @override
+  late final GeneratedColumn<String> medicineName = GeneratedColumn<String>(
+    'medicine_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _doseMeta = const VerificationMeta('dose');
+  @override
+  late final GeneratedColumn<double> dose = GeneratedColumn<double>(
+    'dose',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _unitMeta = const VerificationMeta('unit');
+  @override
+  late final GeneratedColumn<String> unit = GeneratedColumn<String>(
+    'unit',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _reasonMeta = const VerificationMeta('reason');
+  @override
+  late final GeneratedColumn<String> reason = GeneratedColumn<String>(
+    'reason',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    animalId,
+    at,
+    medicineName,
+    dose,
+    unit,
+    reason,
+    note,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'medication_logs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MedicationLog> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('animal_id')) {
+      context.handle(
+        _animalIdMeta,
+        animalId.isAcceptableOrUnknown(data['animal_id']!, _animalIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_animalIdMeta);
+    }
+    if (data.containsKey('at')) {
+      context.handle(_atMeta, at.isAcceptableOrUnknown(data['at']!, _atMeta));
+    } else if (isInserting) {
+      context.missing(_atMeta);
+    }
+    if (data.containsKey('medicine_name')) {
+      context.handle(
+        _medicineNameMeta,
+        medicineName.isAcceptableOrUnknown(
+          data['medicine_name']!,
+          _medicineNameMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_medicineNameMeta);
+    }
+    if (data.containsKey('dose')) {
+      context.handle(
+        _doseMeta,
+        dose.isAcceptableOrUnknown(data['dose']!, _doseMeta),
+      );
+    }
+    if (data.containsKey('unit')) {
+      context.handle(
+        _unitMeta,
+        unit.isAcceptableOrUnknown(data['unit']!, _unitMeta),
+      );
+    }
+    if (data.containsKey('reason')) {
+      context.handle(
+        _reasonMeta,
+        reason.isAcceptableOrUnknown(data['reason']!, _reasonMeta),
+      );
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  MedicationLog map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MedicationLog(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      animalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}animal_id'],
+      )!,
+      at: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}at'],
+      )!,
+      medicineName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}medicine_name'],
+      )!,
+      dose: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}dose'],
+      ),
+      unit: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}unit'],
+      ),
+      reason: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reason'],
+      ),
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+    );
+  }
+
+  @override
+  $MedicationLogsTable createAlias(String alias) {
+    return $MedicationLogsTable(attachedDatabase, alias);
+  }
+}
+
+class MedicationLog extends DataClass implements Insertable<MedicationLog> {
+  final String id;
+  final String animalId;
+  final String at;
+  final String medicineName;
+  final double? dose;
+  final String? unit;
+  final String? reason;
+  final String? note;
+  const MedicationLog({
+    required this.id,
+    required this.animalId,
+    required this.at,
+    required this.medicineName,
+    this.dose,
+    this.unit,
+    this.reason,
+    this.note,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['animal_id'] = Variable<String>(animalId);
+    map['at'] = Variable<String>(at);
+    map['medicine_name'] = Variable<String>(medicineName);
+    if (!nullToAbsent || dose != null) {
+      map['dose'] = Variable<double>(dose);
+    }
+    if (!nullToAbsent || unit != null) {
+      map['unit'] = Variable<String>(unit);
+    }
+    if (!nullToAbsent || reason != null) {
+      map['reason'] = Variable<String>(reason);
+    }
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    return map;
+  }
+
+  MedicationLogsCompanion toCompanion(bool nullToAbsent) {
+    return MedicationLogsCompanion(
+      id: Value(id),
+      animalId: Value(animalId),
+      at: Value(at),
+      medicineName: Value(medicineName),
+      dose: dose == null && nullToAbsent ? const Value.absent() : Value(dose),
+      unit: unit == null && nullToAbsent ? const Value.absent() : Value(unit),
+      reason: reason == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reason),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+    );
+  }
+
+  factory MedicationLog.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MedicationLog(
+      id: serializer.fromJson<String>(json['id']),
+      animalId: serializer.fromJson<String>(json['animalId']),
+      at: serializer.fromJson<String>(json['at']),
+      medicineName: serializer.fromJson<String>(json['medicineName']),
+      dose: serializer.fromJson<double?>(json['dose']),
+      unit: serializer.fromJson<String?>(json['unit']),
+      reason: serializer.fromJson<String?>(json['reason']),
+      note: serializer.fromJson<String?>(json['note']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'animalId': serializer.toJson<String>(animalId),
+      'at': serializer.toJson<String>(at),
+      'medicineName': serializer.toJson<String>(medicineName),
+      'dose': serializer.toJson<double?>(dose),
+      'unit': serializer.toJson<String?>(unit),
+      'reason': serializer.toJson<String?>(reason),
+      'note': serializer.toJson<String?>(note),
+    };
+  }
+
+  MedicationLog copyWith({
+    String? id,
+    String? animalId,
+    String? at,
+    String? medicineName,
+    Value<double?> dose = const Value.absent(),
+    Value<String?> unit = const Value.absent(),
+    Value<String?> reason = const Value.absent(),
+    Value<String?> note = const Value.absent(),
+  }) => MedicationLog(
+    id: id ?? this.id,
+    animalId: animalId ?? this.animalId,
+    at: at ?? this.at,
+    medicineName: medicineName ?? this.medicineName,
+    dose: dose.present ? dose.value : this.dose,
+    unit: unit.present ? unit.value : this.unit,
+    reason: reason.present ? reason.value : this.reason,
+    note: note.present ? note.value : this.note,
+  );
+  MedicationLog copyWithCompanion(MedicationLogsCompanion data) {
+    return MedicationLog(
+      id: data.id.present ? data.id.value : this.id,
+      animalId: data.animalId.present ? data.animalId.value : this.animalId,
+      at: data.at.present ? data.at.value : this.at,
+      medicineName: data.medicineName.present
+          ? data.medicineName.value
+          : this.medicineName,
+      dose: data.dose.present ? data.dose.value : this.dose,
+      unit: data.unit.present ? data.unit.value : this.unit,
+      reason: data.reason.present ? data.reason.value : this.reason,
+      note: data.note.present ? data.note.value : this.note,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MedicationLog(')
+          ..write('id: $id, ')
+          ..write('animalId: $animalId, ')
+          ..write('at: $at, ')
+          ..write('medicineName: $medicineName, ')
+          ..write('dose: $dose, ')
+          ..write('unit: $unit, ')
+          ..write('reason: $reason, ')
+          ..write('note: $note')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, animalId, at, medicineName, dose, unit, reason, note);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MedicationLog &&
+          other.id == this.id &&
+          other.animalId == this.animalId &&
+          other.at == this.at &&
+          other.medicineName == this.medicineName &&
+          other.dose == this.dose &&
+          other.unit == this.unit &&
+          other.reason == this.reason &&
+          other.note == this.note);
+}
+
+class MedicationLogsCompanion extends UpdateCompanion<MedicationLog> {
+  final Value<String> id;
+  final Value<String> animalId;
+  final Value<String> at;
+  final Value<String> medicineName;
+  final Value<double?> dose;
+  final Value<String?> unit;
+  final Value<String?> reason;
+  final Value<String?> note;
+  final Value<int> rowid;
+  const MedicationLogsCompanion({
+    this.id = const Value.absent(),
+    this.animalId = const Value.absent(),
+    this.at = const Value.absent(),
+    this.medicineName = const Value.absent(),
+    this.dose = const Value.absent(),
+    this.unit = const Value.absent(),
+    this.reason = const Value.absent(),
+    this.note = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MedicationLogsCompanion.insert({
+    required String id,
+    required String animalId,
+    required String at,
+    required String medicineName,
+    this.dose = const Value.absent(),
+    this.unit = const Value.absent(),
+    this.reason = const Value.absent(),
+    this.note = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       animalId = Value(animalId),
+       at = Value(at),
+       medicineName = Value(medicineName);
+  static Insertable<MedicationLog> custom({
+    Expression<String>? id,
+    Expression<String>? animalId,
+    Expression<String>? at,
+    Expression<String>? medicineName,
+    Expression<double>? dose,
+    Expression<String>? unit,
+    Expression<String>? reason,
+    Expression<String>? note,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (animalId != null) 'animal_id': animalId,
+      if (at != null) 'at': at,
+      if (medicineName != null) 'medicine_name': medicineName,
+      if (dose != null) 'dose': dose,
+      if (unit != null) 'unit': unit,
+      if (reason != null) 'reason': reason,
+      if (note != null) 'note': note,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MedicationLogsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? animalId,
+    Value<String>? at,
+    Value<String>? medicineName,
+    Value<double?>? dose,
+    Value<String?>? unit,
+    Value<String?>? reason,
+    Value<String?>? note,
+    Value<int>? rowid,
+  }) {
+    return MedicationLogsCompanion(
+      id: id ?? this.id,
+      animalId: animalId ?? this.animalId,
+      at: at ?? this.at,
+      medicineName: medicineName ?? this.medicineName,
+      dose: dose ?? this.dose,
+      unit: unit ?? this.unit,
+      reason: reason ?? this.reason,
+      note: note ?? this.note,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (animalId.present) {
+      map['animal_id'] = Variable<String>(animalId.value);
+    }
+    if (at.present) {
+      map['at'] = Variable<String>(at.value);
+    }
+    if (medicineName.present) {
+      map['medicine_name'] = Variable<String>(medicineName.value);
+    }
+    if (dose.present) {
+      map['dose'] = Variable<double>(dose.value);
+    }
+    if (unit.present) {
+      map['unit'] = Variable<String>(unit.value);
+    }
+    if (reason.present) {
+      map['reason'] = Variable<String>(reason.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MedicationLogsCompanion(')
+          ..write('id: $id, ')
+          ..write('animalId: $animalId, ')
+          ..write('at: $at, ')
+          ..write('medicineName: $medicineName, ')
+          ..write('dose: $dose, ')
+          ..write('unit: $unit, ')
+          ..write('reason: $reason, ')
+          ..write('note: $note, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $WeightsTable extends Weights with TableInfo<$WeightsTable, Weight> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WeightsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _animalIdMeta = const VerificationMeta(
+    'animalId',
+  );
+  @override
+  late final GeneratedColumn<String> animalId = GeneratedColumn<String>(
+    'animal_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _atMeta = const VerificationMeta('at');
+  @override
+  late final GeneratedColumn<String> at = GeneratedColumn<String>(
+    'at',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _weightMeta = const VerificationMeta('weight');
+  @override
+  late final GeneratedColumn<double> weight = GeneratedColumn<double>(
+    'weight',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _unitMeta = const VerificationMeta('unit');
+  @override
+  late final GeneratedColumn<String> unit = GeneratedColumn<String>(
+    'unit',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('g'),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, animalId, at, weight, unit];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'weights';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Weight> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('animal_id')) {
+      context.handle(
+        _animalIdMeta,
+        animalId.isAcceptableOrUnknown(data['animal_id']!, _animalIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_animalIdMeta);
+    }
+    if (data.containsKey('at')) {
+      context.handle(_atMeta, at.isAcceptableOrUnknown(data['at']!, _atMeta));
+    } else if (isInserting) {
+      context.missing(_atMeta);
+    }
+    if (data.containsKey('weight')) {
+      context.handle(
+        _weightMeta,
+        weight.isAcceptableOrUnknown(data['weight']!, _weightMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_weightMeta);
+    }
+    if (data.containsKey('unit')) {
+      context.handle(
+        _unitMeta,
+        unit.isAcceptableOrUnknown(data['unit']!, _unitMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Weight map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Weight(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      animalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}animal_id'],
+      )!,
+      at: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}at'],
+      )!,
+      weight: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}weight'],
+      )!,
+      unit: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}unit'],
+      )!,
+    );
+  }
+
+  @override
+  $WeightsTable createAlias(String alias) {
+    return $WeightsTable(attachedDatabase, alias);
+  }
+}
+
+class Weight extends DataClass implements Insertable<Weight> {
+  final String id;
+  final String animalId;
+  final String at;
+  final double weight;
+  final String unit;
+  const Weight({
+    required this.id,
+    required this.animalId,
+    required this.at,
+    required this.weight,
+    required this.unit,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['animal_id'] = Variable<String>(animalId);
+    map['at'] = Variable<String>(at);
+    map['weight'] = Variable<double>(weight);
+    map['unit'] = Variable<String>(unit);
+    return map;
+  }
+
+  WeightsCompanion toCompanion(bool nullToAbsent) {
+    return WeightsCompanion(
+      id: Value(id),
+      animalId: Value(animalId),
+      at: Value(at),
+      weight: Value(weight),
+      unit: Value(unit),
+    );
+  }
+
+  factory Weight.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Weight(
+      id: serializer.fromJson<String>(json['id']),
+      animalId: serializer.fromJson<String>(json['animalId']),
+      at: serializer.fromJson<String>(json['at']),
+      weight: serializer.fromJson<double>(json['weight']),
+      unit: serializer.fromJson<String>(json['unit']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'animalId': serializer.toJson<String>(animalId),
+      'at': serializer.toJson<String>(at),
+      'weight': serializer.toJson<double>(weight),
+      'unit': serializer.toJson<String>(unit),
+    };
+  }
+
+  Weight copyWith({
+    String? id,
+    String? animalId,
+    String? at,
+    double? weight,
+    String? unit,
+  }) => Weight(
+    id: id ?? this.id,
+    animalId: animalId ?? this.animalId,
+    at: at ?? this.at,
+    weight: weight ?? this.weight,
+    unit: unit ?? this.unit,
+  );
+  Weight copyWithCompanion(WeightsCompanion data) {
+    return Weight(
+      id: data.id.present ? data.id.value : this.id,
+      animalId: data.animalId.present ? data.animalId.value : this.animalId,
+      at: data.at.present ? data.at.value : this.at,
+      weight: data.weight.present ? data.weight.value : this.weight,
+      unit: data.unit.present ? data.unit.value : this.unit,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Weight(')
+          ..write('id: $id, ')
+          ..write('animalId: $animalId, ')
+          ..write('at: $at, ')
+          ..write('weight: $weight, ')
+          ..write('unit: $unit')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, animalId, at, weight, unit);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Weight &&
+          other.id == this.id &&
+          other.animalId == this.animalId &&
+          other.at == this.at &&
+          other.weight == this.weight &&
+          other.unit == this.unit);
+}
+
+class WeightsCompanion extends UpdateCompanion<Weight> {
+  final Value<String> id;
+  final Value<String> animalId;
+  final Value<String> at;
+  final Value<double> weight;
+  final Value<String> unit;
+  final Value<int> rowid;
+  const WeightsCompanion({
+    this.id = const Value.absent(),
+    this.animalId = const Value.absent(),
+    this.at = const Value.absent(),
+    this.weight = const Value.absent(),
+    this.unit = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WeightsCompanion.insert({
+    required String id,
+    required String animalId,
+    required String at,
+    required double weight,
+    this.unit = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       animalId = Value(animalId),
+       at = Value(at),
+       weight = Value(weight);
+  static Insertable<Weight> custom({
+    Expression<String>? id,
+    Expression<String>? animalId,
+    Expression<String>? at,
+    Expression<double>? weight,
+    Expression<String>? unit,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (animalId != null) 'animal_id': animalId,
+      if (at != null) 'at': at,
+      if (weight != null) 'weight': weight,
+      if (unit != null) 'unit': unit,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WeightsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? animalId,
+    Value<String>? at,
+    Value<double>? weight,
+    Value<String>? unit,
+    Value<int>? rowid,
+  }) {
+    return WeightsCompanion(
+      id: id ?? this.id,
+      animalId: animalId ?? this.animalId,
+      at: at ?? this.at,
+      weight: weight ?? this.weight,
+      unit: unit ?? this.unit,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (animalId.present) {
+      map['animal_id'] = Variable<String>(animalId.value);
+    }
+    if (at.present) {
+      map['at'] = Variable<String>(at.value);
+    }
+    if (weight.present) {
+      map['weight'] = Variable<double>(weight.value);
+    }
+    if (unit.present) {
+      map['unit'] = Variable<String>(unit.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WeightsCompanion(')
+          ..write('id: $id, ')
+          ..write('animalId: $animalId, ')
+          ..write('at: $at, ')
+          ..write('weight: $weight, ')
+          ..write('unit: $unit, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $AnimalsTable animals = $AnimalsTable(this);
   late final $FeedingsTable feedings = $FeedingsTable(this);
+  late final $CagesTable cages = $CagesTable(this);
+  late final $AnimalCagesTable animalCages = $AnimalCagesTable(this);
+  late final $CageCleaningsTable cageCleanings = $CageCleaningsTable(this);
+  late final $MedicationLogsTable medicationLogs = $MedicationLogsTable(this);
+  late final $WeightsTable weights = $WeightsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [animals, feedings];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+    animals,
+    feedings,
+    cages,
+    animalCages,
+    cageCleanings,
+    medicationLogs,
+    weights,
+  ];
 }
 
 typedef $$AnimalsTableCreateCompanionBuilder =
@@ -1040,6 +2850,8 @@ typedef $$AnimalsTableCreateCompanionBuilder =
       Value<String?> birthDate,
       Value<String?> profileImagePath,
       Value<int?> colorValue,
+      Value<bool> isSick,
+      Value<String?> healthNote,
       Value<bool> active,
       Value<int> rowid,
     });
@@ -1052,6 +2864,8 @@ typedef $$AnimalsTableUpdateCompanionBuilder =
       Value<String?> birthDate,
       Value<String?> profileImagePath,
       Value<int?> colorValue,
+      Value<bool> isSick,
+      Value<String?> healthNote,
       Value<bool> active,
       Value<int> rowid,
     });
@@ -1097,6 +2911,16 @@ class $$AnimalsTableFilterComposer
 
   ColumnFilters<int> get colorValue => $composableBuilder(
     column: $table.colorValue,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isSick => $composableBuilder(
+    column: $table.isSick,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get healthNote => $composableBuilder(
+    column: $table.healthNote,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1150,6 +2974,16 @@ class $$AnimalsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isSick => $composableBuilder(
+    column: $table.isSick,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get healthNote => $composableBuilder(
+    column: $table.healthNote,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get active => $composableBuilder(
     column: $table.active,
     builder: (column) => ColumnOrderings(column),
@@ -1187,6 +3021,14 @@ class $$AnimalsTableAnnotationComposer
 
   GeneratedColumn<int> get colorValue => $composableBuilder(
     column: $table.colorValue,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isSick =>
+      $composableBuilder(column: $table.isSick, builder: (column) => column);
+
+  GeneratedColumn<String> get healthNote => $composableBuilder(
+    column: $table.healthNote,
     builder: (column) => column,
   );
 
@@ -1229,6 +3071,8 @@ class $$AnimalsTableTableManager
                 Value<String?> birthDate = const Value.absent(),
                 Value<String?> profileImagePath = const Value.absent(),
                 Value<int?> colorValue = const Value.absent(),
+                Value<bool> isSick = const Value.absent(),
+                Value<String?> healthNote = const Value.absent(),
                 Value<bool> active = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AnimalsCompanion(
@@ -1239,6 +3083,8 @@ class $$AnimalsTableTableManager
                 birthDate: birthDate,
                 profileImagePath: profileImagePath,
                 colorValue: colorValue,
+                isSick: isSick,
+                healthNote: healthNote,
                 active: active,
                 rowid: rowid,
               ),
@@ -1251,6 +3097,8 @@ class $$AnimalsTableTableManager
                 Value<String?> birthDate = const Value.absent(),
                 Value<String?> profileImagePath = const Value.absent(),
                 Value<int?> colorValue = const Value.absent(),
+                Value<bool> isSick = const Value.absent(),
+                Value<String?> healthNote = const Value.absent(),
                 Value<bool> active = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AnimalsCompanion.insert(
@@ -1261,6 +3109,8 @@ class $$AnimalsTableTableManager
                 birthDate: birthDate,
                 profileImagePath: profileImagePath,
                 colorValue: colorValue,
+                isSick: isSick,
+                healthNote: healthNote,
                 active: active,
                 rowid: rowid,
               ),
@@ -1539,6 +3389,978 @@ typedef $$FeedingsTableProcessedTableManager =
       Feeding,
       PrefetchHooks Function()
     >;
+typedef $$CagesTableCreateCompanionBuilder =
+    CagesCompanion Function({
+      required String id,
+      required String name,
+      Value<String?> location,
+      Value<String?> note,
+      Value<int> rowid,
+    });
+typedef $$CagesTableUpdateCompanionBuilder =
+    CagesCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String?> location,
+      Value<String?> note,
+      Value<int> rowid,
+    });
+
+class $$CagesTableFilterComposer extends Composer<_$AppDatabase, $CagesTable> {
+  $$CagesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get location => $composableBuilder(
+    column: $table.location,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CagesTableOrderingComposer
+    extends Composer<_$AppDatabase, $CagesTable> {
+  $$CagesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get location => $composableBuilder(
+    column: $table.location,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CagesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CagesTable> {
+  $$CagesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get location =>
+      $composableBuilder(column: $table.location, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+}
+
+class $$CagesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CagesTable,
+          Cage,
+          $$CagesTableFilterComposer,
+          $$CagesTableOrderingComposer,
+          $$CagesTableAnnotationComposer,
+          $$CagesTableCreateCompanionBuilder,
+          $$CagesTableUpdateCompanionBuilder,
+          (Cage, BaseReferences<_$AppDatabase, $CagesTable, Cage>),
+          Cage,
+          PrefetchHooks Function()
+        > {
+  $$CagesTableTableManager(_$AppDatabase db, $CagesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CagesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CagesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CagesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> location = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CagesCompanion(
+                id: id,
+                name: name,
+                location: location,
+                note: note,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                Value<String?> location = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CagesCompanion.insert(
+                id: id,
+                name: name,
+                location: location,
+                note: note,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CagesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CagesTable,
+      Cage,
+      $$CagesTableFilterComposer,
+      $$CagesTableOrderingComposer,
+      $$CagesTableAnnotationComposer,
+      $$CagesTableCreateCompanionBuilder,
+      $$CagesTableUpdateCompanionBuilder,
+      (Cage, BaseReferences<_$AppDatabase, $CagesTable, Cage>),
+      Cage,
+      PrefetchHooks Function()
+    >;
+typedef $$AnimalCagesTableCreateCompanionBuilder =
+    AnimalCagesCompanion Function({
+      required String animalId,
+      required String cageId,
+      Value<int> rowid,
+    });
+typedef $$AnimalCagesTableUpdateCompanionBuilder =
+    AnimalCagesCompanion Function({
+      Value<String> animalId,
+      Value<String> cageId,
+      Value<int> rowid,
+    });
+
+class $$AnimalCagesTableFilterComposer
+    extends Composer<_$AppDatabase, $AnimalCagesTable> {
+  $$AnimalCagesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get animalId => $composableBuilder(
+    column: $table.animalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cageId => $composableBuilder(
+    column: $table.cageId,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$AnimalCagesTableOrderingComposer
+    extends Composer<_$AppDatabase, $AnimalCagesTable> {
+  $$AnimalCagesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get animalId => $composableBuilder(
+    column: $table.animalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cageId => $composableBuilder(
+    column: $table.cageId,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$AnimalCagesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AnimalCagesTable> {
+  $$AnimalCagesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get animalId =>
+      $composableBuilder(column: $table.animalId, builder: (column) => column);
+
+  GeneratedColumn<String> get cageId =>
+      $composableBuilder(column: $table.cageId, builder: (column) => column);
+}
+
+class $$AnimalCagesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AnimalCagesTable,
+          AnimalCage,
+          $$AnimalCagesTableFilterComposer,
+          $$AnimalCagesTableOrderingComposer,
+          $$AnimalCagesTableAnnotationComposer,
+          $$AnimalCagesTableCreateCompanionBuilder,
+          $$AnimalCagesTableUpdateCompanionBuilder,
+          (
+            AnimalCage,
+            BaseReferences<_$AppDatabase, $AnimalCagesTable, AnimalCage>,
+          ),
+          AnimalCage,
+          PrefetchHooks Function()
+        > {
+  $$AnimalCagesTableTableManager(_$AppDatabase db, $AnimalCagesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AnimalCagesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AnimalCagesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AnimalCagesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> animalId = const Value.absent(),
+                Value<String> cageId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AnimalCagesCompanion(
+                animalId: animalId,
+                cageId: cageId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String animalId,
+                required String cageId,
+                Value<int> rowid = const Value.absent(),
+              }) => AnimalCagesCompanion.insert(
+                animalId: animalId,
+                cageId: cageId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$AnimalCagesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AnimalCagesTable,
+      AnimalCage,
+      $$AnimalCagesTableFilterComposer,
+      $$AnimalCagesTableOrderingComposer,
+      $$AnimalCagesTableAnnotationComposer,
+      $$AnimalCagesTableCreateCompanionBuilder,
+      $$AnimalCagesTableUpdateCompanionBuilder,
+      (
+        AnimalCage,
+        BaseReferences<_$AppDatabase, $AnimalCagesTable, AnimalCage>,
+      ),
+      AnimalCage,
+      PrefetchHooks Function()
+    >;
+typedef $$CageCleaningsTableCreateCompanionBuilder =
+    CageCleaningsCompanion Function({
+      required String id,
+      required String animalId,
+      required String at,
+      required String type,
+      Value<String?> note,
+      Value<int> rowid,
+    });
+typedef $$CageCleaningsTableUpdateCompanionBuilder =
+    CageCleaningsCompanion Function({
+      Value<String> id,
+      Value<String> animalId,
+      Value<String> at,
+      Value<String> type,
+      Value<String?> note,
+      Value<int> rowid,
+    });
+
+class $$CageCleaningsTableFilterComposer
+    extends Composer<_$AppDatabase, $CageCleaningsTable> {
+  $$CageCleaningsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get animalId => $composableBuilder(
+    column: $table.animalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get at => $composableBuilder(
+    column: $table.at,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CageCleaningsTableOrderingComposer
+    extends Composer<_$AppDatabase, $CageCleaningsTable> {
+  $$CageCleaningsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get animalId => $composableBuilder(
+    column: $table.animalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get at => $composableBuilder(
+    column: $table.at,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CageCleaningsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CageCleaningsTable> {
+  $$CageCleaningsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get animalId =>
+      $composableBuilder(column: $table.animalId, builder: (column) => column);
+
+  GeneratedColumn<String> get at =>
+      $composableBuilder(column: $table.at, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+}
+
+class $$CageCleaningsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CageCleaningsTable,
+          CageCleaning,
+          $$CageCleaningsTableFilterComposer,
+          $$CageCleaningsTableOrderingComposer,
+          $$CageCleaningsTableAnnotationComposer,
+          $$CageCleaningsTableCreateCompanionBuilder,
+          $$CageCleaningsTableUpdateCompanionBuilder,
+          (
+            CageCleaning,
+            BaseReferences<_$AppDatabase, $CageCleaningsTable, CageCleaning>,
+          ),
+          CageCleaning,
+          PrefetchHooks Function()
+        > {
+  $$CageCleaningsTableTableManager(_$AppDatabase db, $CageCleaningsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CageCleaningsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CageCleaningsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CageCleaningsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> animalId = const Value.absent(),
+                Value<String> at = const Value.absent(),
+                Value<String> type = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CageCleaningsCompanion(
+                id: id,
+                animalId: animalId,
+                at: at,
+                type: type,
+                note: note,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String animalId,
+                required String at,
+                required String type,
+                Value<String?> note = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CageCleaningsCompanion.insert(
+                id: id,
+                animalId: animalId,
+                at: at,
+                type: type,
+                note: note,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CageCleaningsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CageCleaningsTable,
+      CageCleaning,
+      $$CageCleaningsTableFilterComposer,
+      $$CageCleaningsTableOrderingComposer,
+      $$CageCleaningsTableAnnotationComposer,
+      $$CageCleaningsTableCreateCompanionBuilder,
+      $$CageCleaningsTableUpdateCompanionBuilder,
+      (
+        CageCleaning,
+        BaseReferences<_$AppDatabase, $CageCleaningsTable, CageCleaning>,
+      ),
+      CageCleaning,
+      PrefetchHooks Function()
+    >;
+typedef $$MedicationLogsTableCreateCompanionBuilder =
+    MedicationLogsCompanion Function({
+      required String id,
+      required String animalId,
+      required String at,
+      required String medicineName,
+      Value<double?> dose,
+      Value<String?> unit,
+      Value<String?> reason,
+      Value<String?> note,
+      Value<int> rowid,
+    });
+typedef $$MedicationLogsTableUpdateCompanionBuilder =
+    MedicationLogsCompanion Function({
+      Value<String> id,
+      Value<String> animalId,
+      Value<String> at,
+      Value<String> medicineName,
+      Value<double?> dose,
+      Value<String?> unit,
+      Value<String?> reason,
+      Value<String?> note,
+      Value<int> rowid,
+    });
+
+class $$MedicationLogsTableFilterComposer
+    extends Composer<_$AppDatabase, $MedicationLogsTable> {
+  $$MedicationLogsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get animalId => $composableBuilder(
+    column: $table.animalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get at => $composableBuilder(
+    column: $table.at,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get medicineName => $composableBuilder(
+    column: $table.medicineName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get dose => $composableBuilder(
+    column: $table.dose,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get unit => $composableBuilder(
+    column: $table.unit,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$MedicationLogsTableOrderingComposer
+    extends Composer<_$AppDatabase, $MedicationLogsTable> {
+  $$MedicationLogsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get animalId => $composableBuilder(
+    column: $table.animalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get at => $composableBuilder(
+    column: $table.at,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get medicineName => $composableBuilder(
+    column: $table.medicineName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get dose => $composableBuilder(
+    column: $table.dose,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get unit => $composableBuilder(
+    column: $table.unit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$MedicationLogsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MedicationLogsTable> {
+  $$MedicationLogsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get animalId =>
+      $composableBuilder(column: $table.animalId, builder: (column) => column);
+
+  GeneratedColumn<String> get at =>
+      $composableBuilder(column: $table.at, builder: (column) => column);
+
+  GeneratedColumn<String> get medicineName => $composableBuilder(
+    column: $table.medicineName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get dose =>
+      $composableBuilder(column: $table.dose, builder: (column) => column);
+
+  GeneratedColumn<String> get unit =>
+      $composableBuilder(column: $table.unit, builder: (column) => column);
+
+  GeneratedColumn<String> get reason =>
+      $composableBuilder(column: $table.reason, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+}
+
+class $$MedicationLogsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MedicationLogsTable,
+          MedicationLog,
+          $$MedicationLogsTableFilterComposer,
+          $$MedicationLogsTableOrderingComposer,
+          $$MedicationLogsTableAnnotationComposer,
+          $$MedicationLogsTableCreateCompanionBuilder,
+          $$MedicationLogsTableUpdateCompanionBuilder,
+          (
+            MedicationLog,
+            BaseReferences<_$AppDatabase, $MedicationLogsTable, MedicationLog>,
+          ),
+          MedicationLog,
+          PrefetchHooks Function()
+        > {
+  $$MedicationLogsTableTableManager(
+    _$AppDatabase db,
+    $MedicationLogsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MedicationLogsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MedicationLogsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MedicationLogsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> animalId = const Value.absent(),
+                Value<String> at = const Value.absent(),
+                Value<String> medicineName = const Value.absent(),
+                Value<double?> dose = const Value.absent(),
+                Value<String?> unit = const Value.absent(),
+                Value<String?> reason = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MedicationLogsCompanion(
+                id: id,
+                animalId: animalId,
+                at: at,
+                medicineName: medicineName,
+                dose: dose,
+                unit: unit,
+                reason: reason,
+                note: note,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String animalId,
+                required String at,
+                required String medicineName,
+                Value<double?> dose = const Value.absent(),
+                Value<String?> unit = const Value.absent(),
+                Value<String?> reason = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MedicationLogsCompanion.insert(
+                id: id,
+                animalId: animalId,
+                at: at,
+                medicineName: medicineName,
+                dose: dose,
+                unit: unit,
+                reason: reason,
+                note: note,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$MedicationLogsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MedicationLogsTable,
+      MedicationLog,
+      $$MedicationLogsTableFilterComposer,
+      $$MedicationLogsTableOrderingComposer,
+      $$MedicationLogsTableAnnotationComposer,
+      $$MedicationLogsTableCreateCompanionBuilder,
+      $$MedicationLogsTableUpdateCompanionBuilder,
+      (
+        MedicationLog,
+        BaseReferences<_$AppDatabase, $MedicationLogsTable, MedicationLog>,
+      ),
+      MedicationLog,
+      PrefetchHooks Function()
+    >;
+typedef $$WeightsTableCreateCompanionBuilder =
+    WeightsCompanion Function({
+      required String id,
+      required String animalId,
+      required String at,
+      required double weight,
+      Value<String> unit,
+      Value<int> rowid,
+    });
+typedef $$WeightsTableUpdateCompanionBuilder =
+    WeightsCompanion Function({
+      Value<String> id,
+      Value<String> animalId,
+      Value<String> at,
+      Value<double> weight,
+      Value<String> unit,
+      Value<int> rowid,
+    });
+
+class $$WeightsTableFilterComposer
+    extends Composer<_$AppDatabase, $WeightsTable> {
+  $$WeightsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get animalId => $composableBuilder(
+    column: $table.animalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get at => $composableBuilder(
+    column: $table.at,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get weight => $composableBuilder(
+    column: $table.weight,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get unit => $composableBuilder(
+    column: $table.unit,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$WeightsTableOrderingComposer
+    extends Composer<_$AppDatabase, $WeightsTable> {
+  $$WeightsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get animalId => $composableBuilder(
+    column: $table.animalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get at => $composableBuilder(
+    column: $table.at,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get weight => $composableBuilder(
+    column: $table.weight,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get unit => $composableBuilder(
+    column: $table.unit,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$WeightsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WeightsTable> {
+  $$WeightsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get animalId =>
+      $composableBuilder(column: $table.animalId, builder: (column) => column);
+
+  GeneratedColumn<String> get at =>
+      $composableBuilder(column: $table.at, builder: (column) => column);
+
+  GeneratedColumn<double> get weight =>
+      $composableBuilder(column: $table.weight, builder: (column) => column);
+
+  GeneratedColumn<String> get unit =>
+      $composableBuilder(column: $table.unit, builder: (column) => column);
+}
+
+class $$WeightsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WeightsTable,
+          Weight,
+          $$WeightsTableFilterComposer,
+          $$WeightsTableOrderingComposer,
+          $$WeightsTableAnnotationComposer,
+          $$WeightsTableCreateCompanionBuilder,
+          $$WeightsTableUpdateCompanionBuilder,
+          (Weight, BaseReferences<_$AppDatabase, $WeightsTable, Weight>),
+          Weight,
+          PrefetchHooks Function()
+        > {
+  $$WeightsTableTableManager(_$AppDatabase db, $WeightsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WeightsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$WeightsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$WeightsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> animalId = const Value.absent(),
+                Value<String> at = const Value.absent(),
+                Value<double> weight = const Value.absent(),
+                Value<String> unit = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WeightsCompanion(
+                id: id,
+                animalId: animalId,
+                at: at,
+                weight: weight,
+                unit: unit,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String animalId,
+                required String at,
+                required double weight,
+                Value<String> unit = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WeightsCompanion.insert(
+                id: id,
+                animalId: animalId,
+                at: at,
+                weight: weight,
+                unit: unit,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$WeightsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WeightsTable,
+      Weight,
+      $$WeightsTableFilterComposer,
+      $$WeightsTableOrderingComposer,
+      $$WeightsTableAnnotationComposer,
+      $$WeightsTableCreateCompanionBuilder,
+      $$WeightsTableUpdateCompanionBuilder,
+      (Weight, BaseReferences<_$AppDatabase, $WeightsTable, Weight>),
+      Weight,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -1547,4 +4369,14 @@ class $AppDatabaseManager {
       $$AnimalsTableTableManager(_db, _db.animals);
   $$FeedingsTableTableManager get feedings =>
       $$FeedingsTableTableManager(_db, _db.feedings);
+  $$CagesTableTableManager get cages =>
+      $$CagesTableTableManager(_db, _db.cages);
+  $$AnimalCagesTableTableManager get animalCages =>
+      $$AnimalCagesTableTableManager(_db, _db.animalCages);
+  $$CageCleaningsTableTableManager get cageCleanings =>
+      $$CageCleaningsTableTableManager(_db, _db.cageCleanings);
+  $$MedicationLogsTableTableManager get medicationLogs =>
+      $$MedicationLogsTableTableManager(_db, _db.medicationLogs);
+  $$WeightsTableTableManager get weights =>
+      $$WeightsTableTableManager(_db, _db.weights);
 }

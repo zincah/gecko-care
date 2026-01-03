@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show Colors, Color;
 import 'package:image_picker/image_picker.dart';
@@ -80,13 +82,73 @@ class _AnimalDetailPageState extends ConsumerState<AnimalDetailPage> {
   }
 
   Future<void> _pickImage() async {
-    final XFile? picked =
-        await _picker.pickImage(source: ImageSource.gallery, maxWidth: 800);
-    if (picked == null) return;
+    await showCupertinoModalPopup(
+      context: context,
+      builder: (ctx) => CupertinoActionSheet(
+        title: const Text('프로필 사진'),
+        actions: [
+          CupertinoActionSheetAction(
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              final XFile? picked = await _picker.pickImage(
+                source: ImageSource.camera,
+                maxWidth: 800,
+                imageQuality: 85,
+              );
+              if (picked == null) return;
 
-    setState(() {
-      _profilePath = picked.path;
-    });
+              final savedPath = await _persistPickedImage(picked);
+              await _deleteOldProfileIfNeeded(_profilePath, savedPath);
+
+              setState(() {
+                _profilePath = savedPath; // ✅ 앱 폴더 경로로 저장
+              });
+            },
+            child: const Text('카메라로 촬영'),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              final XFile? picked = await _picker.pickImage(
+                source: ImageSource.gallery,
+                maxWidth: 800,
+                imageQuality: 85,
+              );
+              if (picked == null) return;
+
+              final savedPath = await _persistPickedImage(picked);
+              await _deleteOldProfileIfNeeded(_profilePath, savedPath);
+
+              setState(() {
+                _profilePath = savedPath; // ✅ 앱 폴더 경로로 저장
+              });
+            },
+            child: const Text('앨범에서 선택'),
+          ),
+          if (_profilePath != null && _profilePath!.isNotEmpty)
+            CupertinoActionSheetAction(
+              isDestructiveAction: true,
+              onPressed: () async {
+                Navigator.of(ctx).pop();
+                final old = _profilePath;
+                setState(() => _profilePath = null);
+                // 파일도 삭제(선택)
+                try {
+                  if (old != null) {
+                    final f = File(old);
+                    if (await f.exists()) await f.delete();
+                  }
+                } catch (_) {}
+              },
+              child: const Text('사진 제거'),
+            ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.of(ctx).pop(),
+          child: const Text('취소'),
+        ),
+      ),
+    );
   }
 
   Future<void> _pickBirthDate() async {
@@ -151,8 +213,45 @@ class _AnimalDetailPageState extends ConsumerState<AnimalDetailPage> {
     Navigator.of(context).pop(true); // true: 변경되었다는 힌트
   }
 
+  Future<String> _persistPickedImage(XFile picked) async {
+  final dir = await getApplicationDocumentsDirectory();
+  final profilesDir = Directory(p.join(dir.path, 'profiles'));
+  if (!await profilesDir.exists()) {
+    await profilesDir.create(recursive: true);
+  }
+
+  // id 기반으로 파일명 고정(교체 시 덮어쓰기 쉽게)
+  final ext = p.extension(picked.path);
+  final fileName = 'animal_${widget.animal.id}_profile${ext.isEmpty ? ".jpg" : ext}';
+  final targetPath = p.join(profilesDir.path, fileName);
+
+  // 복사(덮어쓰기)
+  final src = File(picked.path);
+  if (await src.exists()) {
+    await src.copy(targetPath);
+  }
+
+  return targetPath;
+}
+
+Future<void> _deleteOldProfileIfNeeded(String? oldPath, String newPath) async {
+  if (oldPath == null || oldPath.isEmpty) return;
+  if (oldPath == newPath) return;
+
+  try {
+    final f = File(oldPath);
+    if (await f.exists()) {
+      await f.delete();
+    }
+  } catch (_) {
+    // 삭제 실패는 치명적이지 않으니 무시
+  }
+}
+
   @override
   Widget build(BuildContext context) {
+    final hasProfile = 
+        _profilePath != null && File(_profilePath!).existsSync();
     final birthText = _birthDate != null
         ? DateFormat.yMMMd('ko_KR').format(_birthDate!)
         : '등록되지 않음';
@@ -197,7 +296,7 @@ class _AnimalDetailPageState extends ConsumerState<AnimalDetailPage> {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: CupertinoColors.systemGrey5,
-                        image: _profilePath != null
+                        image: hasProfile
                             ? DecorationImage(
                                 image: FileImage(File(_profilePath!)),
                                 fit: BoxFit.cover,
