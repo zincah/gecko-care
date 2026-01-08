@@ -2816,6 +2816,452 @@ class WeightsCompanion extends UpdateCompanion<Weight> {
   }
 }
 
+class $CareLogsTable extends CareLogs with TableInfo<$CareLogsTable, CareLog> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CareLogsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _animalIdMeta = const VerificationMeta(
+    'animalId',
+  );
+  @override
+  late final GeneratedColumn<String> animalId = GeneratedColumn<String>(
+    'animal_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _atMeta = const VerificationMeta('at');
+  @override
+  late final GeneratedColumn<String> at = GeneratedColumn<String>(
+    'at',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+    'type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _metaJsonMeta = const VerificationMeta(
+    'metaJson',
+  );
+  @override
+  late final GeneratedColumn<String> metaJson = GeneratedColumn<String>(
+    'meta_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    animalId,
+    at,
+    type,
+    title,
+    note,
+    metaJson,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'care_logs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CareLog> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('animal_id')) {
+      context.handle(
+        _animalIdMeta,
+        animalId.isAcceptableOrUnknown(data['animal_id']!, _animalIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_animalIdMeta);
+    }
+    if (data.containsKey('at')) {
+      context.handle(_atMeta, at.isAcceptableOrUnknown(data['at']!, _atMeta));
+    } else if (isInserting) {
+      context.missing(_atMeta);
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+        _typeMeta,
+        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_typeMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    if (data.containsKey('meta_json')) {
+      context.handle(
+        _metaJsonMeta,
+        metaJson.isAcceptableOrUnknown(data['meta_json']!, _metaJsonMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CareLog map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CareLog(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      animalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}animal_id'],
+      )!,
+      at: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}at'],
+      )!,
+      type: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}type'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      ),
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+      metaJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}meta_json'],
+      ),
+    );
+  }
+
+  @override
+  $CareLogsTable createAlias(String alias) {
+    return $CareLogsTable(attachedDatabase, alias);
+  }
+}
+
+class CareLog extends DataClass implements Insertable<CareLog> {
+  final String id;
+  final String animalId;
+  final String at;
+  final String type;
+  final String? title;
+  final String? note;
+  final String? metaJson;
+  const CareLog({
+    required this.id,
+    required this.animalId,
+    required this.at,
+    required this.type,
+    this.title,
+    this.note,
+    this.metaJson,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['animal_id'] = Variable<String>(animalId);
+    map['at'] = Variable<String>(at);
+    map['type'] = Variable<String>(type);
+    if (!nullToAbsent || title != null) {
+      map['title'] = Variable<String>(title);
+    }
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    if (!nullToAbsent || metaJson != null) {
+      map['meta_json'] = Variable<String>(metaJson);
+    }
+    return map;
+  }
+
+  CareLogsCompanion toCompanion(bool nullToAbsent) {
+    return CareLogsCompanion(
+      id: Value(id),
+      animalId: Value(animalId),
+      at: Value(at),
+      type: Value(type),
+      title: title == null && nullToAbsent
+          ? const Value.absent()
+          : Value(title),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      metaJson: metaJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(metaJson),
+    );
+  }
+
+  factory CareLog.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CareLog(
+      id: serializer.fromJson<String>(json['id']),
+      animalId: serializer.fromJson<String>(json['animalId']),
+      at: serializer.fromJson<String>(json['at']),
+      type: serializer.fromJson<String>(json['type']),
+      title: serializer.fromJson<String?>(json['title']),
+      note: serializer.fromJson<String?>(json['note']),
+      metaJson: serializer.fromJson<String?>(json['metaJson']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'animalId': serializer.toJson<String>(animalId),
+      'at': serializer.toJson<String>(at),
+      'type': serializer.toJson<String>(type),
+      'title': serializer.toJson<String?>(title),
+      'note': serializer.toJson<String?>(note),
+      'metaJson': serializer.toJson<String?>(metaJson),
+    };
+  }
+
+  CareLog copyWith({
+    String? id,
+    String? animalId,
+    String? at,
+    String? type,
+    Value<String?> title = const Value.absent(),
+    Value<String?> note = const Value.absent(),
+    Value<String?> metaJson = const Value.absent(),
+  }) => CareLog(
+    id: id ?? this.id,
+    animalId: animalId ?? this.animalId,
+    at: at ?? this.at,
+    type: type ?? this.type,
+    title: title.present ? title.value : this.title,
+    note: note.present ? note.value : this.note,
+    metaJson: metaJson.present ? metaJson.value : this.metaJson,
+  );
+  CareLog copyWithCompanion(CareLogsCompanion data) {
+    return CareLog(
+      id: data.id.present ? data.id.value : this.id,
+      animalId: data.animalId.present ? data.animalId.value : this.animalId,
+      at: data.at.present ? data.at.value : this.at,
+      type: data.type.present ? data.type.value : this.type,
+      title: data.title.present ? data.title.value : this.title,
+      note: data.note.present ? data.note.value : this.note,
+      metaJson: data.metaJson.present ? data.metaJson.value : this.metaJson,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CareLog(')
+          ..write('id: $id, ')
+          ..write('animalId: $animalId, ')
+          ..write('at: $at, ')
+          ..write('type: $type, ')
+          ..write('title: $title, ')
+          ..write('note: $note, ')
+          ..write('metaJson: $metaJson')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, animalId, at, type, title, note, metaJson);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CareLog &&
+          other.id == this.id &&
+          other.animalId == this.animalId &&
+          other.at == this.at &&
+          other.type == this.type &&
+          other.title == this.title &&
+          other.note == this.note &&
+          other.metaJson == this.metaJson);
+}
+
+class CareLogsCompanion extends UpdateCompanion<CareLog> {
+  final Value<String> id;
+  final Value<String> animalId;
+  final Value<String> at;
+  final Value<String> type;
+  final Value<String?> title;
+  final Value<String?> note;
+  final Value<String?> metaJson;
+  final Value<int> rowid;
+  const CareLogsCompanion({
+    this.id = const Value.absent(),
+    this.animalId = const Value.absent(),
+    this.at = const Value.absent(),
+    this.type = const Value.absent(),
+    this.title = const Value.absent(),
+    this.note = const Value.absent(),
+    this.metaJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CareLogsCompanion.insert({
+    required String id,
+    required String animalId,
+    required String at,
+    required String type,
+    this.title = const Value.absent(),
+    this.note = const Value.absent(),
+    this.metaJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       animalId = Value(animalId),
+       at = Value(at),
+       type = Value(type);
+  static Insertable<CareLog> custom({
+    Expression<String>? id,
+    Expression<String>? animalId,
+    Expression<String>? at,
+    Expression<String>? type,
+    Expression<String>? title,
+    Expression<String>? note,
+    Expression<String>? metaJson,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (animalId != null) 'animal_id': animalId,
+      if (at != null) 'at': at,
+      if (type != null) 'type': type,
+      if (title != null) 'title': title,
+      if (note != null) 'note': note,
+      if (metaJson != null) 'meta_json': metaJson,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CareLogsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? animalId,
+    Value<String>? at,
+    Value<String>? type,
+    Value<String?>? title,
+    Value<String?>? note,
+    Value<String?>? metaJson,
+    Value<int>? rowid,
+  }) {
+    return CareLogsCompanion(
+      id: id ?? this.id,
+      animalId: animalId ?? this.animalId,
+      at: at ?? this.at,
+      type: type ?? this.type,
+      title: title ?? this.title,
+      note: note ?? this.note,
+      metaJson: metaJson ?? this.metaJson,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (animalId.present) {
+      map['animal_id'] = Variable<String>(animalId.value);
+    }
+    if (at.present) {
+      map['at'] = Variable<String>(at.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (metaJson.present) {
+      map['meta_json'] = Variable<String>(metaJson.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CareLogsCompanion(')
+          ..write('id: $id, ')
+          ..write('animalId: $animalId, ')
+          ..write('at: $at, ')
+          ..write('type: $type, ')
+          ..write('title: $title, ')
+          ..write('note: $note, ')
+          ..write('metaJson: $metaJson, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2826,6 +3272,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $CageCleaningsTable cageCleanings = $CageCleaningsTable(this);
   late final $MedicationLogsTable medicationLogs = $MedicationLogsTable(this);
   late final $WeightsTable weights = $WeightsTable(this);
+  late final $CareLogsTable careLogs = $CareLogsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2838,6 +3285,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     cageCleanings,
     medicationLogs,
     weights,
+    careLogs,
   ];
 }
 
@@ -4361,6 +4809,238 @@ typedef $$WeightsTableProcessedTableManager =
       Weight,
       PrefetchHooks Function()
     >;
+typedef $$CareLogsTableCreateCompanionBuilder =
+    CareLogsCompanion Function({
+      required String id,
+      required String animalId,
+      required String at,
+      required String type,
+      Value<String?> title,
+      Value<String?> note,
+      Value<String?> metaJson,
+      Value<int> rowid,
+    });
+typedef $$CareLogsTableUpdateCompanionBuilder =
+    CareLogsCompanion Function({
+      Value<String> id,
+      Value<String> animalId,
+      Value<String> at,
+      Value<String> type,
+      Value<String?> title,
+      Value<String?> note,
+      Value<String?> metaJson,
+      Value<int> rowid,
+    });
+
+class $$CareLogsTableFilterComposer
+    extends Composer<_$AppDatabase, $CareLogsTable> {
+  $$CareLogsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get animalId => $composableBuilder(
+    column: $table.animalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get at => $composableBuilder(
+    column: $table.at,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get metaJson => $composableBuilder(
+    column: $table.metaJson,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CareLogsTableOrderingComposer
+    extends Composer<_$AppDatabase, $CareLogsTable> {
+  $$CareLogsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get animalId => $composableBuilder(
+    column: $table.animalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get at => $composableBuilder(
+    column: $table.at,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get metaJson => $composableBuilder(
+    column: $table.metaJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CareLogsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CareLogsTable> {
+  $$CareLogsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get animalId =>
+      $composableBuilder(column: $table.animalId, builder: (column) => column);
+
+  GeneratedColumn<String> get at =>
+      $composableBuilder(column: $table.at, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<String> get metaJson =>
+      $composableBuilder(column: $table.metaJson, builder: (column) => column);
+}
+
+class $$CareLogsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CareLogsTable,
+          CareLog,
+          $$CareLogsTableFilterComposer,
+          $$CareLogsTableOrderingComposer,
+          $$CareLogsTableAnnotationComposer,
+          $$CareLogsTableCreateCompanionBuilder,
+          $$CareLogsTableUpdateCompanionBuilder,
+          (CareLog, BaseReferences<_$AppDatabase, $CareLogsTable, CareLog>),
+          CareLog,
+          PrefetchHooks Function()
+        > {
+  $$CareLogsTableTableManager(_$AppDatabase db, $CareLogsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CareLogsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CareLogsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CareLogsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> animalId = const Value.absent(),
+                Value<String> at = const Value.absent(),
+                Value<String> type = const Value.absent(),
+                Value<String?> title = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<String?> metaJson = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CareLogsCompanion(
+                id: id,
+                animalId: animalId,
+                at: at,
+                type: type,
+                title: title,
+                note: note,
+                metaJson: metaJson,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String animalId,
+                required String at,
+                required String type,
+                Value<String?> title = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<String?> metaJson = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CareLogsCompanion.insert(
+                id: id,
+                animalId: animalId,
+                at: at,
+                type: type,
+                title: title,
+                note: note,
+                metaJson: metaJson,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CareLogsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CareLogsTable,
+      CareLog,
+      $$CareLogsTableFilterComposer,
+      $$CareLogsTableOrderingComposer,
+      $$CareLogsTableAnnotationComposer,
+      $$CareLogsTableCreateCompanionBuilder,
+      $$CareLogsTableUpdateCompanionBuilder,
+      (CareLog, BaseReferences<_$AppDatabase, $CareLogsTable, CareLog>),
+      CareLog,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4379,4 +5059,6 @@ class $AppDatabaseManager {
       $$MedicationLogsTableTableManager(_db, _db.medicationLogs);
   $$WeightsTableTableManager get weights =>
       $$WeightsTableTableManager(_db, _db.weights);
+  $$CareLogsTableTableManager get careLogs =>
+      $$CareLogsTableTableManager(_db, _db.careLogs);
 }

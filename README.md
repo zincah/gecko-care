@@ -4,13 +4,13 @@ A new Flutter project.
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+앱 휴대폰 재설치 시
+- Ios/Runner.xcworkspace 를 xcode로 open 후 상단 디바이스 선택 > run (이렇게 하고)
+- flutter run --release 
 
-A few resources to get you started if this is your first Flutter project:
+## todo list
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- 프로필 사진 변경이 안됨
+- 기타 메모 변경이 안됨
+- 하위 다이어리 부분 높이 달력 부분까지 높이기
+- 바탕화면 꾸미기 기능

@@ -104,6 +104,24 @@ class Weights extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+// 케어 로그 (탈피, 메모 등 공통 로그)
+class CareLogs extends Table {
+  TextColumn get id => text()();
+  TextColumn get animalId => text()();
+  TextColumn get at => text()(); // ISO8601
+  TextColumn get type => text()(); // 'shed', 'note', ...
+
+  TextColumn get title => text().nullable()(); // note 제목(선택)
+  TextColumn get note => text().nullable()();  // 공통 메모
+
+  // 타입별 추가정보 (JSON 문자열로 확장)
+  TextColumn get metaJson => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+
 /// 조인 결과용 DTO
 class FeedingWithAnimal {
   final Feeding feeding;
@@ -128,13 +146,14 @@ class FeedingWithAnimal {
     CageCleanings,
     MedicationLogs,
     Weights,
+    CareLogs,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_open());
 
   @override
-  int get schemaVersion => 4; // 스키마 바뀔 때마다 +1
+  int get schemaVersion => 5; // 스키마 바뀔 때마다 +1
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -151,8 +170,15 @@ class AppDatabase extends _$AppDatabase {
             await m.deleteTable('cage_cleanings');
             await m.deleteTable('medication_logs');
             await m.deleteTable('weights');
+            await m.deleteTable('care_logs');
             await m.createAll();
+            return;
           }
+
+            // ✅ 기존 데이터 유지하면서 CareLogs만 추가
+            if (from < 5) {
+              await m.createTable(careLogs);
+            }
         },
       );
 
